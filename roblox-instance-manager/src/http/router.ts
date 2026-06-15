@@ -46,6 +46,11 @@ async function walk(dir: string): Promise<string[]> {
 
 const GROUP_SEGMENT = /^\(.+\)$/;
 
+/**
+ * Derive a URL pathname from the file's location under routesDir.
+ * Directory segments wrapped in parens — e.g. `(auth)` — are groups and
+ * are dropped from the URL, matching Next.js behavior.
+ */
 function fileToUrlPath(file: string): string {
   const rel = path.relative(routesDir, file);
   const parsed = path.parse(rel);
@@ -104,7 +109,7 @@ export function loadRoutes(): Promise<void> {
 
       if (!registered) {
         console.error(
-          `[Router] ${file} exports no recognized method handlers (GET/POST/\u2026/WS). Skipping.`
+          `[Router] ${file} exports no recognized method handlers (GET/POST/…/WS). Skipping.`
         );
       }
     }
@@ -123,6 +128,7 @@ import { getProcessManager, getAccountStore, getDataDir } from "./manager-regist
 import { WS_PORT } from "../executor-config.js";
 
 export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  // Add CORS headers for browser extensions and dashboard API calls
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -137,6 +143,7 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
   const pm = getProcessManager();
   const store = getAccountStore();
 
+  // Route instance-manager dashboard and APIs
   if (pm && store) {
     if (url.pathname === "/api/accounts/add") {
       const alias = url.searchParams.get("alias");
@@ -167,7 +174,7 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
       res.end(JSON.stringify(pm.listClients()));
       return;
     }
-    if (url.pathname === "/api/accounts") {
+    if (url.pathname === "/api/accounts" && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(store.listAccounts()));
       return;

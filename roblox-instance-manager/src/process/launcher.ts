@@ -14,6 +14,7 @@ function findRobloxExecutable(): string | null {
     if (!existsSync(basePath)) continue;
     try {
       const dirs = readdirSync(basePath);
+      // Sort directories by modification time (latest first)
       const sortedDirs = dirs
         .map(dir => ({ name: dir, path: join(basePath, dir) }))
         .filter(item => existsSync(join(item.path, "RobloxPlayerBeta.exe")))
@@ -69,6 +70,7 @@ function getProtocolLauncher(): { exePath: string; argsPattern: string[] } | nul
       }
     }
 
+    // Split argsStr into tokens
     const argsPattern = argsStr.split(/\s+/).filter(Boolean);
     return { exePath, argsPattern };
   } catch (err) {
@@ -95,6 +97,7 @@ export async function getAuthTicket(cookie: string): Promise<string> {
   const url = "https://auth.roblox.com/v1/authentication-ticket";
   const formattedCookie = cookie.startsWith(".ROBLOSECURITY=") ? cookie : `.ROBLOSECURITY=${cookie}`;
 
+  // 1. Initial request to get X-CSRF-TOKEN
   const initRes = await fetch(url, {
     method: "POST",
     headers: {
@@ -108,6 +111,7 @@ export async function getAuthTicket(cookie: string): Promise<string> {
 
   const csrfToken = initRes.headers.get("x-csrf-token");
 
+  // 2. Request with X-CSRF-TOKEN
   const headers: Record<string, string> = {
     "Cookie": formattedCookie,
     "Referer": "https://www.roblox.com",
@@ -161,6 +165,7 @@ export function launchRoblox(authTicket?: string, placeId?: number): LaunchResul
       return cleaned;
     });
   } else {
+    // Fallback to direct launch
     const directPath = findRobloxExecutable();
     if (!directPath) {
       throw new Error("RobloxPlayerBeta.exe not found. Please install Roblox.");
@@ -171,21 +176,34 @@ export function launchRoblox(authTicket?: string, placeId?: number): LaunchResul
     }
   }
 
+  // Record active Roblox PIDs before launch so we can identify the new one
   const existingPids = getRobloxPlayerPids();
 
   console.error(`[Launcher] Spawning launcher: "${exePath}" with args:`, args);
-  const proc = spawn(exePath, args, {
-    detached: true,
-    windowsHide: false,
-    stdio: ["ignore", "ignore", "ignore"],
-  });
+  let proc: ChildProcess;
+  if (process.platform === "win32") {
+    proc = spawn("cmd.exe", ["/c", "start", "", exePath, ...args], {
+      detached: true,
+      windowsHide: false,
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+  } else {
+    proc = spawn(exePath, args, {
+      detached: true,
+      windowsHide: false,
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+  }
   proc.unref();
 
+  // Default to process PID
   let spawnedPid = proc.pid ?? 0;
 
+  // If we launched a bootstrapper/wrapper (like Fishstrap/Bloxstrap), wait for the actual RobloxPlayerBeta process
   if (protocolLauncher && authTicket) {
     const start = Date.now();
     let foundPid = 0;
+    // Wait up to 15 seconds for the actual RobloxPlayerBeta process to spawn
     while (Date.now() - start < 15000) {
       const currentPids = getRobloxPlayerPids();
       const newPids = currentPids.filter(p => !existingPids.includes(p));
@@ -197,6 +215,7 @@ export function launchRoblox(authTicket?: string, placeId?: number): LaunchResul
         foundPid = currentPids[0];
         break;
       }
+      // Sleep 250ms
       try {
         execSync("powershell -Command Start-Sleep -Milliseconds 250");
       } catch {}

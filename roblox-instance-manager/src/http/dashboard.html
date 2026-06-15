@@ -602,6 +602,7 @@ tr:hover td { background: rgba(99, 102, 241, 0.03); color: var(--text-primary); 
                 <th>Created</th>
                 <th>Last Used</th>
                 <th>Age Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="dashAccountsBody"></tbody>
@@ -688,6 +689,7 @@ tr:hover td { background: rgba(99, 102, 241, 0.03); color: var(--text-primary); 
                 <th>Created At</th>
                 <th>Last Active Use</th>
                 <th>Recency</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="accountsFullBody"></tbody>
@@ -887,6 +889,41 @@ function showToast(message, type = 'info') {
 }
 
 // Action Handlers
+async function launchAccount(alias, btn, event) {
+  if (event) event.stopPropagation();
+  if (btn) btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = "🚀 Launching...";
+  showToast(`Initiating launch for account profile: ${alias}...`, "info");
+  
+  try {
+    const res = await fetch("/api/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "launch", alias })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`Successfully launched Roblox for account "${alias}"!`, "success");
+      logActivity(`Account "${alias}" launched manually via Web Dashboard.`, "info");
+    } else {
+      showToast(`Launch failed: ${data.error || 'unknown error'}`, "error");
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+  } catch (err) {
+    showToast(`Failed to trigger launch: ${err.message}`, "error");
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  } finally {
+    refresh();
+  }
+}
+
 async function restartClient(clientId, event) {
   if (event) event.stopPropagation();
   const btn = document.querySelector(`.btn-restart[data-id="${clientId}"]`);
@@ -1077,6 +1114,7 @@ function renderAccounts(accounts) {
           ? `<img src="${a.avatarUrl}" style="width:32px; height:32px; border-radius:50%; border:1px solid var(--border);" alt="Avatar">`
           : `<span style="font-size:20px;">👤</span>`;
         const username = a.username ? `@${a.username}` : '<span class="text-muted">unknown</span>';
+        const isActive = clientsCache?.some(c => c.accountName === a.alias || c.username === a.username);
         return `
           <tr>
             <td style="padding: 8px 24px; vertical-align: middle;">${avatarImg}</td>
@@ -1085,11 +1123,14 @@ function renderAccounts(accounts) {
             <td style="vertical-align: middle;">${fmtDate(a.created)}</td>
             <td style="vertical-align: middle;">${fmtDate(a.lastUsed)}</td>
             <td style="vertical-align: middle;"><span class="text-accent">${timeAgo(a.lastUsed)}</span></td>
+            <td style="vertical-align: middle;">
+              <button class="btn btn-restart" ${isActive ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} onclick="launchAccount('${a.alias}', this, event)">🚀 Launch</button>
+            </td>
           </tr>`;
       }).join('')
     : '';
 
-  const empty = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔒</div><div>No account profiles configured</div></div></td></tr>`;
+  const empty = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">🔒</div><div>No account profiles configured</div></div></td></tr>`;
   document.getElementById('dashAccountsBody').innerHTML = rows || empty;
   document.getElementById('accountsFullBody').innerHTML = rows || empty;
   
