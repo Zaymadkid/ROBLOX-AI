@@ -1,0 +1,65 @@
+import { WebSocket } from "ws";
+import { WS_PORT } from "../../../executor-config.js";
+import {
+  resetSecondaryState,
+  secondaryResponseResolvers,
+  setInstanceRole,
+  setRelaySocket,
+} from "../shared/communication.js";
+import type { RobloxResponse } from "../../types.js";
+
+export function startAsSecondary(
+  relayUrl: string = `ws://localhost:${WS_PORT}/mcp-relay`,
+  onFailed?: () => void,
+  onPromote?: () => void
+): void {
+  setInstanceRole("secondary");
+  resetSecondaryState();
+
+  console.error(`[Secondary] Connecting to primary relay at ${relayUrl} ...`);
+
+  const socket = new WebSocket(relayUrl);
+  setRelaySocket(socket);
+
+  let everConnected = false;
+
+  socket.on("open", () => {
+    everConnected = true;
+    console.error("[Secondary] Connected to primary via relay.");
+  });
+
+  socket.on("message", (rawData) => {
+    try {
+      const data = JSON.parse(rawData.toString()) as RobloxResponse;
+      if (data.id) {
+        const resolver = secondaryResponseResolvers.get(data.id);
+        if (resolver) {
+          resolver(data);
+          secondaryResponseResolvers.delete(data.id);
+        }
+      }
+    } catch (e) {
+      console.error("[Secondary] Error parsing relay response:", e);
+    }
+  });
+
+  socket.on("close", () => {
+    setRelaySocket(null);
+    for (const [id, resolver] of secondaryResponseResolvers.entries()) {
+      resolver({ id, output: undefined });
+    }
+    secondaryResponseResolvers.clear();
+
+    if (!everConnected && onFailed) {
+      console.error("[Secondary] Never connected — remote unreachable. Falling back to primary mode.");
+      onFailed();
+    } else if (everConnected) {
+      console.error("[Secondary] Lost connection to primary. Attempting promotion...");
+      onPromote?.();
+    }
+  });
+
+  socket.on("error", (err) => {
+    console.error("[Secondary] Relay socket error:", err.message);
+  });
+}
