@@ -1254,13 +1254,7 @@ while true do
         end)
 
         if not cobaltLoaded then
-            -- Fallback: try loading Cobalt from GitHub
-            local cobaltOk, cobaltErr = pcall(function()
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/Zaymadkid/ROBLOX-AI/main/roblox-executor-mcp-real/cobalt.luau"))()
-            end)
-            if not cobaltOk then
-                error("Failed to load Cobalt: " .. tostring(errCobalt) .. " | " .. tostring(cobaltErr))
-            end
+            error("Failed to load Cobalt: " .. tostring(errCobalt))
         end
 
         -- Wait for Cobalt to initialize
