@@ -126,6 +126,7 @@ export function loadRoutes(): Promise<void> {
 
 import { getProcessManager, getAccountStore, getDataDir } from "./manager-registry.js";
 import { WS_PORT } from "../executor-config.js";
+import { getActiveClients, unregisterClient, getClientById } from "../bridge/handlers/shared/registry.js";
 
 export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Add CORS headers for browser extensions and dashboard API calls
@@ -170,8 +171,51 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
       return;
     }
     if (url.pathname === "/api/clients") {
+      const pmClients = pm.listClients();
+      const connectedClients = getActiveClients();
+      
+      const mergedClients = connectedClients.map(conn => {
+        const pmMatch = pmClients.find(
+          p => p.accountName.toLowerCase() === conn.username.toLowerCase()
+        );
+        return {
+          clientId: conn.clientId,
+          pid: pmMatch ? pmMatch.pid : null,
+          accountName: conn.username,
+          placeId: conn.placeId,
+          placeName: conn.placeName,
+          jobId: conn.jobId,
+          transport: conn.transport,
+          startedAt: pmMatch ? pmMatch.startedAt : new Date().toISOString(),
+          status: pmMatch ? pmMatch.status : "running",
+          uptimeSeconds: pmMatch ? Math.floor((Date.now() - new Date(pmMatch.startedAt).getTime()) / 1000) : 0,
+          isManual: !pmMatch,
+        };
+      });
+
+      for (const pmC of pmClients) {
+        const isConnected = connectedClients.some(
+          c => c.username.toLowerCase() === pmC.accountName.toLowerCase()
+        );
+        if (!isConnected) {
+          mergedClients.push({
+            clientId: pmC.clientId,
+            pid: pmC.pid,
+            accountName: pmC.accountName,
+            placeId: pmC.placeId ?? 0,
+            placeName: "Connecting...",
+            jobId: "",
+            transport: "none" as any,
+            startedAt: pmC.startedAt,
+            status: pmC.status,
+            uptimeSeconds: Math.floor((Date.now() - new Date(pmC.startedAt).getTime()) / 1000),
+            isManual: false,
+          });
+        }
+      }
+
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(pm.listClients()));
+      res.end(JSON.stringify(mergedClients));
       return;
     }
     if (url.pathname === "/api/accounts" && req.method === "GET") {
@@ -219,7 +263,14 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
         res.end(JSON.stringify({ error: "Missing clientId" }));
         return;
       }
-      const success = pm.closeClient(clientId);
+      let success = pm.closeClient(clientId);
+      
+      const wsClient = getClientById(clientId);
+      if (wsClient) {
+        unregisterClient(clientId);
+        success = true;
+      }
+
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success }));
       return;

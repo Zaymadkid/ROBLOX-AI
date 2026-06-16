@@ -857,12 +857,12 @@ function closeDetail() { document.getElementById('detailOverlay').classList.remo
 function showDetail(client) {
   document.getElementById('detailOverlay').classList.add('open');
   document.getElementById('detId').textContent = client.clientId || '-';
-  document.getElementById('detPid').textContent = client.pid || '-';
+  document.getElementById('detPid').textContent = client.pid || 'Manual';
   document.getElementById('detAccount').textContent = client.accountName || '-';
   document.getElementById('detPlace').textContent = client.placeId || 'none';
-  document.getElementById('detStatus').innerHTML = statusTag(client.status);
-  document.getElementById('detUptime').textContent = fmtUptime(client.uptimeSeconds);
-  document.getElementById('detStarted').textContent = fmtDate(client.startedAt);
+  document.getElementById('detStatus').innerHTML = statusTag(client.status, client.isManual);
+  document.getElementById('detUptime').textContent = client.isManual ? 'N/A' : fmtUptime(client.uptimeSeconds);
+  document.getElementById('detStarted').textContent = client.isManual ? 'N/A' : fmtDate(client.startedAt);
 }
 
 document.getElementById('detailOverlay').addEventListener('click', e => {
@@ -991,7 +991,10 @@ function fmtUptime(s) {
   return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
 }
 
-function statusTag(status) {
+function statusTag(status, isManual) {
+  if (isManual) {
+    return `<span class="status status-running" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); color: rgb(167, 139, 250);"><span class="sd" style="background: rgb(139, 92, 246);"></span>manual</span>`;
+  }
   return `<span class="status status-${status}"><span class="sd"></span>${status}</span>`;
 }
 
@@ -1039,13 +1042,13 @@ function renderClients(clients) {
     ? clients.map(c => `
       <tr class="clickable" onclick='showDetail(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
         <td><span class="mono">${c.clientId?.slice(0,8)}...</span></td>
-        <td><span class="mono">${c.pid}</span></td>
+        <td><span class="mono">${c.pid || 'Manual'}</span></td>
         <td class="fw-600">${c.accountName}</td>
         <td><span class="mono">${c.placeId || '-'}</span></td>
-        <td>${statusTag(c.status)}</td>
-        <td>${fmtUptime(c.uptimeSeconds)}</td>
+        <td>${statusTag(c.status, c.isManual)}</td>
+        <td>${c.isManual ? 'N/A' : fmtUptime(c.uptimeSeconds)}</td>
         <td class="actions-cell">
-          <button class="btn btn-restart" data-id="${c.clientId}" onclick="restartClient('${c.clientId}', event)">🔄 Restart</button>
+          <button class="btn btn-restart" data-id="${c.clientId}" ${c.isManual ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} onclick="restartClient('${c.clientId}', event)">🔄 Restart</button>
           <button class="btn btn-close" data-id="${c.clientId}" onclick="closeClient('${c.clientId}', event)">🔌 Shutdown</button>
         </td>
       </tr>`).join('')
@@ -1059,14 +1062,14 @@ function renderClients(clients) {
     ? clients.map(c => `
       <tr class="clickable" onclick='showDetail(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
         <td><span class="mono">${c.clientId?.slice(0,8)}...</span></td>
-        <td><span class="mono">${c.pid}</span></td>
+        <td><span class="mono">${c.pid || 'Manual'}</span></td>
         <td class="fw-600">${c.accountName}</td>
         <td><span class="mono">${c.placeId || '-'}</span></td>
-        <td>${statusTag(c.status)}</td>
-        <td>${fmtDate(c.startedAt)}</td>
-        <td>${fmtUptime(c.uptimeSeconds)}</td>
+        <td>${statusTag(c.status, c.isManual)}</td>
+        <td>${c.isManual ? 'N/A' : fmtDate(c.startedAt)}</td>
+        <td>${c.isManual ? 'N/A' : fmtUptime(c.uptimeSeconds)}</td>
         <td class="actions-cell">
-          <button class="btn btn-restart" data-id="${c.clientId}" onclick="restartClient('${c.clientId}', event)">🔄 Restart</button>
+          <button class="btn btn-restart" data-id="${c.clientId}" ${c.isManual ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} onclick="restartClient('${c.clientId}', event)">🔄 Restart</button>
           <button class="btn btn-close" data-id="${c.clientId}" onclick="closeClient('${c.clientId}', event)">🔌 Shutdown</button>
         </td>
       </tr>`).join('')
