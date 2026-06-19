@@ -1,223 +1,123 @@
-# ROBLOX AI
+# 🕹️ ROBLOX AI: Vulnerability Research & Automation Toolset
 
-A standalone toolset for Roblox game vulnerability research and AI-powered automation. A unified MCP server that handles **process lifecycle** (launch, auth, game joining, crash recovery) and **in-game operations** (execute Luau, decompile scripts, spy remotes, GUI interaction).
+A state-of-the-art, standalone engineering toolset built for **Roblox game vulnerability research**, anti-cheat analysis, and AI-assisted automation. This repository provides a unified MCP (Model Context Protocol) server handling the full process lifecycle and real-time interactive in-game operations.
 
-## Architecture
+---
 
-`
-User / AI Client (OpenCode, Claude Desktop, Cursor, Windsurf)
-  |-- roblox-instance-manager MCP     (everything in one server)
-        |-- launch Roblox processes
-        |-- cookie-based account auth
-        |-- join games via robloclient://
-        |-- health monitoring + crash recovery
-        |-- execute Luau code
-        |-- decompile scripts
-        |-- remote spy (RemoteEvent/Function)
-        |-- script grep + semantic search
-        |-- instance search (CSS-like selectors)
-        |-- click buttons, type text
-        |-- screenshot windows
-        |-- integrated dashboard (port 16385)
-        |-- bridge: primary/secondary + WebSocket relay (port 16384)
-`
+## 💎 Core Capabilities
 
-### Primary/Secondary Bridge
+* 🚀 **Process Control:** Multi-profile launching, automatic cookie authentication, place-joining, and health monitoring.
+* 💻 **In-Game Operations:** Direct Luau execution, script decompilation, Remote Event/Function spying.
+* 🔍 **Analysis & Search:** Regex script grep, semantic script search (embeddings-based), CSS-like instance hierarchy querying.
+* 🎮 **UI Automation:** Interactive mouse clicks, keyboard text input simulation, and OS window screenshot capture.
+* 📊 **Integrated Dashboard:** A premium, dark-mode glassmorphic control center (port `16384`).
+* 📡 **Failproof Bridge:** Leader-elected primary/secondary network with self-healing WebSocket relays.
 
-Uses a leader-election system on port 16384:
-- **Primary** � hosts the HTTP server + WebSocket server, handles all tool dispatch
-- **Secondary** � connects to primary via WebSocket relay, forwards tool requests
-- If primary crashes, a secondary auto-promotes to take over (jittered to avoid split-brain)
-- --baseurl flag lets secondaries connect to a remote primary
+---
 
-## Contents
+## 📐 Architecture Overview
 
-| Directory | Description |
-|-----------|-------------|
-| oblox-instance-manager/ | Unified MCP server (process lifecycle + in-game operations) |
-| chrome-extension/ | Browser extension to grab .ROBLOSECURITY token from roblox.com |
-| docs/ | Superpowers plans and design specs |
+```mermaid
+graph TD
+    Client[AI Client / User IDE <br> Claude Code, Cursor, OpenCode] 
+    MCP[roblox-instance-manager MCP Server]
+    Dash[Web Dashboard <br> http://localhost:16384/]
+    Relay[WS Bridge Relay <br> Port 16384]
+    Client1[Roblox Game Client 1]
+    Client2[Roblox Game Client 2]
 
-## Prerequisites
+    Client -->|Stdio MCP| MCP
+    MCP -->|Bridge Dispatch| Relay
+    Dash -->|HTTP/WS API| Relay
+    Relay <-->|WS Connection| Client1
+    Relay <-->|WS Connection| Client2
+```
 
-- **Node.js 18+** (required for MCP server)
-- **Python 3.10+** (for semantic search embeddings)
-- **Roblox client** installed (RobloxPlayerBeta.exe)
-- **An MCP-supporting AI client** � OpenCode, Claude Desktop, Cursor, Windsurf, etc.
-- **OpenRouter API key** (optional, for semantic search features)
+### 📡 Leader-Elected Bridge Relay
+The communication layer on port `16384` implements an automatic leader-election system:
+* **Primary Mode:** Spins up the main HTTP + WebSocket coordination server to handle client registry and relay commands.
+* **Secondary Mode:** Automatically connects to the primary relay. If the primary disconnects, a secondary is chosen via a jittered election protocol to take over.
 
-## Setup
+---
 
-`ash
-# 1. Install server
+## 📁 Repository Contents
+
+| Location | Purpose |
+| :--- | :--- |
+| 🛡️ [roblox-instance-manager/](file:///c:/Users/fpsko/Downloads/ROBLOX%20AI/roblox-instance-manager) | The core TypeScript MCP server & HTTP dashboard. |
+| 🌐 [chrome-extension/](file:///c:/Users/fpsko/Downloads/ROBLOX%20AI/chrome-extension) | V3 Browser Extension to sync `.ROBLOSECURITY` tokens automatically. |
+| 📝 [docs/](file:///c:/Users/fpsko/Downloads/ROBLOX%20AI/docs) | Design specifications and research notes. |
+
+---
+
+## 🛠️ Setup & Installation
+
+### 1. Prerequisites
+Ensure you have the following installed on your Windows machine:
+* **Node.js 18+**
+* **Python 3.10+** (Required only for semantic script search embeddings)
+* **Roblox Player**
+
+### 2. Build the Server
+```bash
+# Navigate to the instance manager directory
 cd roblox-instance-manager
+
+# Install dependencies and compile TypeScript
 npm install
 npm run build
+```
 
-# 2. Chrome Extension (optional)
-# Load chrome-extension/ as an unpacked extension in Chrome/Edge
-# Use it to grab .ROBLOSECURITY cookies from roblox.com
-`
+### 3. Install Chrome Extension (Optional)
+1. Open Chrome and navigate to `chrome://extensions/`.
+2. Enable **Developer mode** (top-right toggle).
+3. Click **Load unpacked** and select the [chrome-extension/](file:///c:/Users/fpsko/Downloads/ROBLOX%20AI/chrome-extension) folder.
 
-## MCP Configuration
+---
 
-### OpenCode (opencode.jsonc)
+## ⚙️ AI Client Integration
 
-`jsonc
+Add the MCP server to your preferred client config using absolute paths:
+
+### 🧩 Claude Code CLI (`~/.claude.json`)
+```json
 {
   "mcpServers": {
     "roblox-instance-manager": {
       "command": "node",
-      "args": ["C:/path/to/ROBLOX AI/roblox-instance-manager/dist/index.js"]
+      "args": [
+        "c:/Users/fpsko/Downloads/ROBLOX AI/roblox-instance-manager/dist/index.js"
+      ]
     }
   }
 }
-`
+```
 
-### Claude Desktop (claude_desktop_config.json)
-
-`json
+### 💻 OpenCode (`opencode.jsonc`)
+```json
 {
   "mcpServers": {
     "roblox-instance-manager": {
       "command": "node",
-      "args": ["C:/path/to/ROBLOX AI/roblox-instance-manager/dist/index.js"]
+      "args": [
+        "c:/Users/fpsko/Downloads/ROBLOX AI/roblox-instance-manager/dist/index.js"
+      ]
     }
   }
 }
-`
+```
 
-### Cursor / Windsurf
+---
 
-Add as an MCP server in the settings UI, pointing to the dist/index.js file.
+## ⚙️ How to use in Claude Code
+When using Claude Code CLI, type:
+`claude mcp add roblox-instance-manager node "c:/Users/fpsko/Downloads/ROBLOX AI/roblox-instance-manager/dist/index.js"`
 
-## Workflow
+---
 
-`
-1. manage_accounts add ? store a Roblox account (alias + .ROBLOSECURITY)
-2. launch_client ? spawn Roblox with that account
-3. join_game ? teleport into a specific place
-4. get_executor_info ? verify executor MCP is connected
-5. Use executor tools: execute, script-grep, remote-spy, search-instances, etc.
-6. Analyze ? Develop ? Test ? Report
-`
+## 🔌 Getting Started (In-Game Injection)
 
-## Tools Reference
-
-### Process Lifecycle (9 tools)
-
-| Tool | Description |
-|------|-------------|
-| launch_client | Launch Roblox with a stored account. Finds RobloxPlayerBeta.exe, injects auth cookie. Optional instant place join. |
-| join_game | Teleport a running client to a game via obloclient:// protocol URL |
-| list_clients | List all managed clients with PID, account, place, status, uptime |
-| get_client_status | Detailed health check for a specific client (process alive, memory, uptime) |
-| estart_client | Kill and relaunch a client with the same account (keeps same clientId) |
-| close_client | Gracefully close a client (SIGTERM ? taskkill fallback) |
-| manage_accounts | CRUD for stored Roblox accounts (cookies encrypted at rest with AES-256-GCM) |
-| 	ake_screenshot | Full-screen screenshot via PowerShell (returns PNG file path) |
-| get_executor_info | Check if executor MCP is running and list available tools |
-
-### In-Game Operations (21 tools)
-
-| Tool | Description |
-|------|-------------|
-| execute | Run Luau code in a connected Roblox client |
-| get_data_by_code | Run Luau and return serialized values |
-| execute_file | Run a .luau/.lua file in a client |
-| get_script_content | Decompile a script by path or script proxy |
-| script_grep | Search decompiled scripts with regex |
-| semantic_search_scripts | Find scripts by natural-language behavior description |
-| search_instances | Find game objects with CSS-like selectors (Part.Tagged[Anchored=false]) |
-| get_descendants_tree | Get depth-limited instance hierarchy |
-| get_game_info | Get current place/universe metadata |
-| get_console_output | Read Roblox developer console logs |
-| ensure_remote_spy | Load Cobalt remote spy |
-| get_remote_spy_logs | View captured RemoteEvent/Function calls |
-| lock_remote | Block a remote by name and direction |
-| ignore_remote | Ignore logging for a remote (still fires) |
-| clear_remote_spy_logs | Clear captured spy logs |
-| click_button | Click a TextButton/ImageButton by path |
-| 	ype_text_box | Type text into a TextBox (keystrokes or direct set) |
-| list_clients | List connected Roblox clients |
-| set_active_client | Set which connected client receives tool calls |
-| list_roblox_windows | List visible Roblox OS windows with PIDs |
-| screenshot_window | Capture a Roblox OS window screenshot |
-
-## Account Management
-
-Cookies (.ROBLOSECURITY) are stored encrypted at rest using **AES-256-GCM** with a machine-derived key. No master password needed.
-
-### Getting your .ROBLOSECURITY cookie
-
-1. Open Chrome/Edge and go to roblox.com (logged in)
-2. F12 ? Application tab ? Cookies ? https://www.roblox.com
-3. Copy the .ROBLOSECURITY value
-4. Or use the Chrome extension (load chrome-extension/ as unpacked) to auto-grab it
-
-### CLI via manage_accounts tool
-
-`json
-{
-  "action": "add",
-  "alias": "alt1",
-  "cookie": "_|WARNING:-DO-NOT-SHARE..."
-}
-`
-
-## Dashboard
-
-The server includes an integrated web dashboard at http://localhost:16385/.
-
-The dashboard shows:
-- Connected clients and their status
-- Account list
-- Executor health
-- Script sources and semantic search status
-- Server logs
-
-## Chrome Extension
-
-The chrome-extension/ folder contains a browser extension that:
-1. Reads .ROBLOSECURITY from roblox.com cookies
-2. Syncs it to the Instance Manager's HTTP API
-3. Also supports copy-to-clipboard
-
-**Load it**: Chrome ? Extensions ? Load unpacked ? select chrome-extension/
-
-## Security
-
-- Account cookies encrypted at rest (AES-256-GCM)
-- MCP uses stdio transport only (no network exposure)
-- Dashboard binds to 127.0.0.1 only
-- No authentication needed (local-only)
-- Never commit .env or cookie files
-
-## License
-
-MIT
-## Getting Started (In-Game Injection)
-
-After starting the instance-manager server, inject the connector into Roblox using any executor:
-
-`lua
-local url = "https://raw.githubusercontent.com/Zaymadkid/ROBLOX-AI/main/roblox-instance-manager/connector.luau"
-local success, err = pcall(function()
-    loadstring(game:HttpGet(url))()
-end)
-
-if success then
-    print("[MCP] Connector loaded and connected successfully!")
-else
-    warn("[MCP] Failed to load connector:", tostring(err))
-end
-`
-
-This fetches and runs the connector script, which connects to the local bridge server and registers the client for remote tool execution.
-
-## Getting Started (In-Game Injection)
-
-After starting the instance-manager server, inject the connector into Roblox using any executor:
+To connect any running Roblox game client to your local AI session, inject the connector script using your choice of executor:
 
 ```lua
 local url = "https://raw.githubusercontent.com/Zaymadkid/ROBLOX-AI/main/roblox-instance-manager/connector.luau"
@@ -232,4 +132,59 @@ else
 end
 ```
 
-This fetches and runs the connector script, which connects to the local bridge server and registers the client for remote tool execution.
+Once executed, the game instance will register itself via the local WebSocket relay and appear as an active target on the dashboard.
+
+---
+
+## 🧰 Tools Reference
+
+### 1. Process Lifecycle (9 Tools)
+
+| Tool | Parameters | Description |
+| :--- | :--- | :--- |
+| `launch_client` | `accountName`, `placeId` | Launches Roblox under a specific profile, negotiating tickets automatically. |
+| `join_game` | `clientId`, `placeId` | Teleports a running client into another place. |
+| `list_clients` | None | Returns a list of all running and manually injected clients. |
+| `get_client_status` | `clientId` | Performs a health-check on a client. |
+| `restart_client` | `clientId` | Restarts an instance using a fresh authentication ticket. |
+| `close_client` | `clientId` | Safely terminates a client. |
+| `manage_accounts` | `action`, `alias`, `cookie` | Manages stored accounts (AES-256-GCM encrypted). |
+| `take_screenshot` | None | Captures a full-screen screenshot via PowerShell. |
+| `get_executor_info` | None | Verifies executor bridge connectivity. |
+
+### 2. In-Game Operations (21 Tools)
+
+| Tool | Description |
+| :--- | :--- |
+| `execute` | Dispatches raw Luau script execution to the targeted game client. |
+| `get_data_by_code` | Runs Luau and returns serialized values/returned variables. |
+| `execute_file` | Reads and executes a local `.luau` or `.lua` file inside the client. |
+| `get_script_content` | Decompile script files by path or instance references. |
+| `script_grep` | Regular expression search across all client-side scripts. |
+| `semantic_search_scripts` | Finds script paths by matching functionality descriptions. |
+| `search_instances` | Finds game objects using CSS-style DOM selectors (e.g. `Part.Tagged[Anchored=false]`). |
+| `get_descendants_tree` | Recursively walks the game object tree up to a limited depth. |
+| `get_game_info` | Extracts place ID, universe ID, and game server details. |
+| `get_console_output` | Collects current logs from the Roblox developer console. |
+| `ensure_remote_spy` | Hooks Cobalt RemoteEvent/RemoteFunction spy tool. |
+| `get_remote_spy_logs` | Views captured remote event details. |
+| `block_remote` | Blocks specific network remotes. |
+| `ignore_remote` | Filters remote logging output. |
+| `clear_remote_spy_logs` | Clears remote logger history. |
+| `click_button` | Climbs the UI tree to click buttons. |
+| `type_text_box` | Simulates direct input inside text boxes. |
+| `list_roblox_windows` | Lists active game processes. |
+| `screenshot_window` | Screencaps a specific Roblox client window. |
+
+---
+
+## 🔒 Security Architecture
+
+* **Encrypted Cookies:** Accounts cookies (`.ROBLOSECURITY`) are stored encrypted at rest using AES-256-GCM with a hardware-derived machine key.
+* **Local-Only Boundary:** The HTTP/WS server and dashboard bind strictly to `127.0.0.1` and are not exposed over the local network.
+* **Secure Transport:** Stdio communication is leveraged between the AI client and MCP server.
+
+---
+
+## 📄 License
+Licensed under the **MIT License**.
