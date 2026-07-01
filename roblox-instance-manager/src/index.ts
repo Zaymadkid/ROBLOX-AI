@@ -2,7 +2,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { loadConfig } from "./config.js";
 import { registerAllTools } from "./tools/index.js";
-import { AccountStore } from "./accounts/store.js";
 import { ProcessManager } from "./process/manager.js";
 import { ExecutorCoordinator } from "./bridge/coordinator.js";
 import { boot } from "./bridge/boot.js";
@@ -11,21 +10,20 @@ import { setManagerInstances, getScriptLibrary } from "./http/manager-registry.j
 
 const config = loadConfig();
 
-const accountStore = new AccountStore(config.dataDir);
-const processManager = new ProcessManager(accountStore);
+const processManager = new ProcessManager();
 const coordinator = new ExecutorCoordinator(config.executorUrl);
 
-setManagerInstances(processManager, accountStore, config.dataDir);
+setManagerInstances(processManager, config.dataDir);
 
 const server = new McpServer({
   name: "roblox-instance-manager",
   version: "1.0.0",
   description:
-    "MANAGES ROBLOX CLIENT PROCESSES & EXECUTOR. Launch clients with stored accounts, join games, health monitoring, " +
-    "execute Luau in active client, decompile/grep scripts, spy on remote signals, take screenshots, type/click in GUI.",
+    "MANAGES ROBLOX CLIENT PROCESSES & EXECUTOR. Launch clients, join games, health monitoring, " +
+    "execute Luau in active client, decompile/grep scripts, spy on remote signals, take screenshots, type/click in GUI, manage script library.",
 });
 
-registerAllTools(server, accountStore, processManager, coordinator, getScriptLibrary());
+registerAllTools(server, processManager, coordinator, getScriptLibrary());
 registerExecutorTools(server);
 
 const transport = new StdioServerTransport();

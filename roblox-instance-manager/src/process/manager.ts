@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto";
-import { AccountStore } from "../accounts/store.js";
-import { launchRoblox, killProcess, isProcessRunning, getAuthTicket } from "./launcher.js";
+import { killProcess, isProcessRunning } from "./launcher.js";
 
 export interface ClientInfo {
   clientId: string;
@@ -13,8 +12,6 @@ export interface ClientInfo {
 
 export class ProcessManager {
   private clients: Map<string, ClientInfo> = new Map();
-
-  constructor(private accountStore?: AccountStore) {}
 
   registerClient(pid: number, accountName: string, placeId?: number): string {
     const clientId = randomUUID();
@@ -43,9 +40,7 @@ export class ProcessManager {
 
   updatePlaceId(clientId: string, placeId: number): void {
     const client = this.clients.get(clientId);
-    if (client) {
-      client.placeId = placeId;
-    }
+    if (client) client.placeId = placeId;
   }
 
   healthCheck(): ClientInfo[] {
@@ -57,34 +52,6 @@ export class ProcessManager {
       }
     }
     return dead;
-  }
-
-  async restartClient(clientId: string): Promise<number> {
-    const client = this.clients.get(clientId);
-    if (!client) throw new Error(`Client ${clientId} not found`);
-
-    client.status = "restarting";
-    killProcess(client.pid);
-
-    await new Promise((r) => setTimeout(r, 2000));
-
-    let authTicket: string | undefined;
-    if (this.accountStore && client.accountName) {
-      const cookie = this.accountStore.getCookie(client.accountName);
-      if (cookie) {
-        try {
-          authTicket = await getAuthTicket(cookie);
-        } catch (err) {
-          console.error(`[ProcessManager] Failed to get auth ticket for restart:`, err);
-        }
-      }
-    }
-
-    const result = launchRoblox(authTicket, client.placeId ?? undefined);
-    client.pid = result.pid;
-    client.startedAt = new Date().toISOString();
-    client.status = "running";
-    return result.pid;
   }
 
   closeClient(clientId: string): boolean {

@@ -125,7 +125,7 @@ export function loadRoutes(): Promise<void> {
   return loadPromise;
 }
 
-import { getProcessManager, getAccountStore, getDataDir } from "./manager-registry.js";
+import { getProcessManager, getDataDir } from "./manager-registry.js";
 import { WS_PORT } from "../executor-config.js";
 import { getActiveClients, unregisterClient, getClientById } from "../bridge/handlers/shared/registry.js";
 
@@ -143,28 +143,9 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
 
   const url = new URL(req.url || "/", `http://localhost`);
   const pm = getProcessManager();
-  const store = getAccountStore();
 
   // Route instance-manager dashboard and APIs
-  if (pm && store) {
-    if (url.pathname === "/api/accounts/add") {
-      const alias = url.searchParams.get("alias");
-      const cookie = url.searchParams.get("cookie");
-      if (!alias || !cookie) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Missing alias or cookie" }));
-        return;
-      }
-      try {
-        await store.addAccount(alias, cookie);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true }));
-      } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: (err as Error).message }));
-      }
-      return;
-    }
+  if (pm) {
     if (url.pathname === "/" || url.pathname === "/index.html") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       const htmlPath = path.join(__dirname, "dashboard.html");
@@ -219,11 +200,6 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
       res.end(JSON.stringify(mergedClients));
       return;
     }
-    if (url.pathname === "/api/accounts" && req.method === "GET") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(store.listAccounts()));
-      return;
-    }
     if (url.pathname === "/api/executor") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ running: true, version: "1.1.0" }));
@@ -238,23 +214,6 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
         dataDir: getDataDir(),
         uptime: process.uptime(),
       }));
-      return;
-    }
-    if (url.pathname === "/api/clients/restart") {
-      const clientId = url.searchParams.get("clientId");
-      if (!clientId) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Missing clientId" }));
-        return;
-      }
-      try {
-        const newPid = await pm.restartClient(clientId);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, pid: newPid }));
-      } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: (err as Error).message }));
-      }
       return;
     }
     // ── Script Library ───────────────────────────────────────────────────────
@@ -283,7 +242,7 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
       res.end(JSON.stringify({ success }));
       return;
     }
-  }
+  } // end if (pm)
 
   for (const route of httpRoutes) {
     if (route.path === url.pathname && route.method === req.method) {

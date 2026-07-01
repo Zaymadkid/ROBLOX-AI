@@ -1,19 +1,5 @@
 import { z } from "zod";
 
-export const LaunchClientShape = {
-  account: z.string().describe(
-    "The alias of a stored account from the account store (e.g. 'alt1', 'main', 'bot1'). " +
-    "Add accounts first using the manage_accounts tool with action='add'. " +
-    "The account's .ROBLOSECURITY cookie will be used to authenticate the Roblox client."
-  ),
-  placeId: z.number().optional().describe(
-    "Optional Roblox place/experience ID to join immediately after launch (e.g. 4483381587 for Brookhaven). " +
-    "If omitted, the client launches to the Roblox home screen. " +
-    "You can use join_game later to send them to a specific place. " +
-    "Find place IDs by visiting a game's page in browser — the URL contains the place ID."
-  ),
-};
-
 export const JoinGameShape = {
   clientId: z.string().describe(
     "The client ID returned by launch_client or list_clients. " +
@@ -51,27 +37,6 @@ export const CloseClientShape = {
     "The client ID to close (UUID format). " +
     "Gracefully kills the Roblox process and removes it from the managed list. " +
     "The executor connection to this client will be lost."
-  ),
-};
-
-export const ManageAccountsShape = {
-  action: z.enum(["add", "list", "remove"]).describe(
-    "The action to perform on the account store:\n" +
-    "- 'add': Store a new account. Requires both 'alias' and 'cookie'.\n" +
-    "- 'list': Show all stored accounts (shows aliases and dates, NOT cookies).\n" +
-    "- 'remove': Delete a stored account. Requires 'alias'."
-  ),
-  alias: z.string().optional().describe(
-    "A human-readable name for the account (e.g. 'main', 'alt1', 'bot2'). " +
-    "Required for 'add' and 'remove' actions. " +
-    "Use this alias later with launch_client to start Roblox with this account."
-  ),
-  cookie: z.string().optional().describe(
-    "The .ROBLOSECURITY cookie from Roblox. " +
-    "This is the auth token — keep it secret, treat it like a password. " +
-    "Required for 'add' action. " +
-    "To get it: open Roblox in browser → DevTools → Application → Cookies → .ROBLOSECURITY. " +
-    "Cookies are encrypted at rest using AES-256-GCM with a machine-derived key."
   ),
 };
 

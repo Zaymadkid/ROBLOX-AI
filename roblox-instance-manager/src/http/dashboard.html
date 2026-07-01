@@ -713,11 +713,6 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
         Clients
         <span class="nav-badge" id="navClientBadge">0</span>
       </div>
-      <div class="nav-item" data-page="accounts">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Accounts
-        <span class="nav-badge" id="navAccountBadge">0</span>
-      </div>
       <div class="nav-item" data-page="activity">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Activity Log
@@ -767,18 +762,13 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
     <div class="page active" id="page-dashboard">
       <div class="page-header">
         <h1>Dashboard</h1>
-        <p>Overview of all active clients and stored accounts.</p>
+        <p>Overview of all active clients and server status.</p>
       </div>
       <div class="stats">
         <div class="stat">
           <div class="stat-label">Active Clients</div>
           <div class="stat-value c-blue" id="dashClientCount">0</div>
           <div class="stat-sub" id="dashClientDetail">0 running · 0 crashed</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Stored Accounts</div>
-          <div class="stat-value c-green" id="dashAccountCount">0</div>
-          <div class="stat-sub">Encrypted at rest</div>
         </div>
         <div class="stat">
           <div class="stat-label">Executor Bridge</div>
@@ -810,23 +800,6 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Auth Profiles
-          </div>
-          <span class="card-badge" id="dashAccountBadge">0</span>
-        </div>
-        <div class="card-body">
-          <table>
-            <thead><tr>
-              <th></th><th>Alias</th><th>Username</th><th>Created</th><th>Last Used</th><th>Recency</th><th>Actions</th>
-            </tr></thead>
-            <tbody id="dashAccountsBody"></tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
     <!-- CLIENTS -->
@@ -869,53 +842,6 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
             <tbody id="clientsFullBody"></tbody>
           </table>
         </div>
-      </div>
-    </div>
-
-    <!-- ACCOUNTS -->
-    <div class="page" id="page-accounts">
-      <div class="page-header">
-        <h1>Accounts</h1>
-        <p>Stored Roblox authentication profiles.</p>
-      </div>
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-label">Total Accounts</div>
-          <div class="stat-value c-green" id="accTotal">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Oldest Profile</div>
-          <div class="stat-value c-muted" id="accOldest" style="font-size:18px">-</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Newest Profile</div>
-          <div class="stat-value c-muted" id="accNewest" style="font-size:18px">-</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Stored Accounts
-          </div>
-          <span class="card-badge" id="accFullBadge">0</span>
-        </div>
-        <div class="card-body">
-          <table>
-            <thead><tr>
-              <th></th><th>Alias</th><th>Username</th><th>Created</th><th>Last Active</th><th>Recency</th><th>Actions</th>
-            </tr></thead>
-            <tbody id="accountsFullBody"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="callout">
-        <strong>Account Store Security</strong>
-        Use the <code>manage_accounts</code> MCP tool in your agent to register Roblox profiles:
-        <ol>
-          <li>Run <code>manage_accounts(action="add", alias="MyAlt", cookie=".ROBLOSECURITY_value")</code></li>
-          <li>All sessions are encrypted with hardware-derived AES-256-GCM encryption.</li>
-        </ol>
       </div>
     </div>
 
@@ -1229,10 +1155,6 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
             <div class="tool-desc">Gracefully terminate a client. SIGTERM first, then taskkill force if needed.</div>
           </div>
           <div class="tool-card">
-            <div class="tool-name">manage_accounts</div>
-            <div class="tool-desc">Add, list, or remove stored Roblox accounts. Cookies encrypted at rest with AES-256-GCM.</div>
-          </div>
-          <div class="tool-card">
             <div class="tool-name">take_screenshot</div>
             <div class="tool-desc">Full-screen capture via PowerShell System.Drawing. Returns the file path to the PNG.</div>
           </div>
@@ -1450,7 +1372,7 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
 const POLL = 2000;
 let startTime = Date.now();
 let clientsCache = [];
-let accountsCache = [];
+
 let activityLog = [];
 
 /* ── Utils ── */
@@ -1605,30 +1527,6 @@ function renderActivity(serverLogs) {
 }
 
 /* ── Actions ── */
-async function launchAccount(alias, btn, event) {
-  if (event) event.stopPropagation();
-  if (btn) { btn.disabled = true; btn.textContent = 'Launching…'; }
-  toast(`Launching account: ${alias}`, 'info');
-  try {
-    const res = await fetch('/api/accounts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'launch', alias }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      toast(`Launched "${alias}" successfully`, 'success');
-      logActivity(`Account "${alias}" launched from dashboard.`, 'info');
-    } else {
-      toast(`Launch failed: ${data.error || 'unknown'}`, 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'Launch'; }
-    }
-  } catch (err) {
-    toast(`Error: ${err.message}`, 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Launch'; }
-  } finally { refresh(); }
-}
-
 async function restartClient(id, event) {
   if (event) event.stopPropagation();
   const btn = document.querySelector(`.btn-restart[data-id="${id}"]`);
@@ -1731,53 +1629,6 @@ function renderClients(clients) {
   }
 }
 
-function renderAccounts(accounts) {
-  const count = accounts?.length || 0;
-  document.getElementById('navAccountBadge').textContent  = count;
-  document.getElementById('dashAccountCount').textContent = count;
-  document.getElementById('dashAccountBadge').textContent = `${count} profile${count !== 1 ? 's' : ''}`;
-  document.getElementById('accTotal').textContent         = count;
-  document.getElementById('accFullBadge').textContent     = `${count} accounts`;
-
-  if (count) {
-    const dates = accounts.map(a => new Date(a.created).getTime()).sort((a,b) => a-b);
-    document.getElementById('accOldest').textContent = new Date(dates[0]).toLocaleDateString();
-    document.getElementById('accNewest').textContent = new Date(dates[dates.length-1]).toLocaleDateString();
-  } else {
-    document.getElementById('accOldest').textContent = '-';
-    document.getElementById('accNewest').textContent = '-';
-  }
-
-  const rows = accounts?.length ? accounts.map(a => {
-    const isActive = clientsCache?.some(c => c.accountName === a.alias || c.username === a.username);
-    const avatarCell = a.avatarUrl
-      ? `<div class="avatar"><img src="${a.avatarUrl}" alt=""></div>`
-      : `<div class="avatar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;
-    const username = a.username ? `<span class="c-blue">@${a.username}</span>` : `<span style="color:var(--text-3)">unknown</span>`;
-    return `<tr>
-      <td style="width:40px">${avatarCell}</td>
-      <td class="fw-600">${a.alias}</td>
-      <td>${username}</td>
-      <td>${fmtDate(a.created)}</td>
-      <td>${fmtDate(a.lastUsed)}</td>
-      <td style="color:var(--text-3)">${timeAgo(a.lastUsed)}</td>
-      <td><button class="btn btn-blue" ${isActive ? 'disabled' : ''} onclick="launchAccount('${a.alias}', this, event)">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Launch
-      </button></td>
-    </tr>`;
-  }).join('') : '';
-
-  const noAccounts = emptyRow(7,
-    `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-    'No accounts configured'
-  );
-
-  document.getElementById('dashAccountsBody').innerHTML = rows || noAccounts;
-  document.getElementById('accountsFullBody').innerHTML = rows || noAccounts;
-  accountsCache = accounts || [];
-}
-
 function renderExecutor(exec) {
   const icon = document.getElementById('execIcon');
   const transportBadge = document.getElementById('execTransportBadge');
@@ -1814,16 +1665,14 @@ async function refresh() {
   document.getElementById('dashUptime').textContent  = fmtUptime(uptime);
   document.getElementById('dashStarted').textContent = `since ${new Date(startTime).toLocaleTimeString()}`;
 
-  const [clients, accounts, executor, sysinfo, serverLogs] = await Promise.all([
+  const [clients, executor, sysinfo, serverLogs] = await Promise.all([
     api('/api/clients'),
-    api('/api/accounts'),
     api('/api/executor'),
     api('/api/system-status'),
     fetchServerLogs(),
   ]);
 
   if (clients)  renderClients(clients);
-  if (accounts) renderAccounts(accounts);
   if (executor) renderExecutor(executor);
   if (sysinfo) {
     document.getElementById('sysExecutorUrl').textContent = sysinfo.executorUrl || '-';

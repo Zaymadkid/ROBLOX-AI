@@ -1,15 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { AccountStore } from "../accounts/store.js";
 import { ProcessManager } from "../process/manager.js";
 import { ExecutorCoordinator } from "../bridge/coordinator.js";
 import { ScriptLibrary } from "../scripts/library.js";
-import { handleLaunchClient } from "./impl/launch-client.js";
 import { handleJoinGame } from "./impl/join-game.js";
 import { handleListClients } from "./impl/list-clients.js";
 import { handleClientStatus } from "./impl/client-status.js";
-import { handleRestartClient } from "./impl/restart-client.js";
 import { handleCloseClient } from "./impl/close-client.js";
-import { handleManageAccounts } from "./impl/manage-accounts.js";
 import { handleScreenshot } from "./impl/screenshot.js";
 import { handleExecutorInfo } from "./impl/executor-info.js";
 import { handleSaveScript } from "./impl/save-script.js";
@@ -21,9 +17,9 @@ import {
   handleApproveScript,
 } from "./impl/script-library.js";
 import {
-  LaunchClientShape, JoinGameShape, ListClientsShape,
-  ClientStatusShape, RestartClientShape, CloseClientShape,
-  ManageAccountsShape, ScreenshotShape, ExecutorInfoShape,
+  JoinGameShape, ListClientsShape,
+  ClientStatusShape, CloseClientShape,
+  ScreenshotShape, ExecutorInfoShape,
   SaveScriptShape,
   ListScriptsShape, GetScriptShape, DeleteScriptShape,
   UpdateScriptShape, ApproveScriptShape,
@@ -31,22 +27,10 @@ import {
 
 export function registerAllTools(
   server: McpServer,
-  accountStore: AccountStore,
   processManager: ProcessManager,
   coordinator: ExecutorCoordinator,
   scriptLibrary?: ScriptLibrary | null
 ): void {
-  server.tool(
-    "launch_client",
-    "Launch a Roblox client process with a stored account. Finds RobloxPlayerBeta.exe, spawns it, and tracks the process. " +
-    "Optionally join a place immediately. The client is registered in the process manager and returned with a clientId. " +
-    "IMPORTANT: After launching, you MUST manually connect the executor (roblox-executor-mcp) to this Roblox window. " +
-    "Use this together with roblox-executor-mcp tools: launch_client → user manually connects executor → use executor tools for in-game operations. " +
-    "Accounts are managed via manage_accounts tool first.",
-    LaunchClientShape,
-    async (params) => handleLaunchClient(params, accountStore, processManager)
-  );
-
   server.tool(
     "join_game",
     "Direct a running Roblox client to join a specific game by place ID. " +
@@ -78,17 +62,6 @@ export function registerAllTools(
   );
 
   server.tool(
-    "restart_client",
-    "Kill and automatically relaunch a Roblox client with the same account. " +
-    "Waits 2 seconds for cleanup before restarting. The client gets a new PID but keeps the same clientId. " +
-    "Use this when a client crashes or becomes unresponsive. " +
-    "NOTE: After restart, the executor connection is lost — you will need to reconnect the executor manually to the new Roblox window. " +
-    "Health check with get_client_status first to confirm the client actually needs restarting.",
-    RestartClientShape,
-    async (params) => handleRestartClient(params, processManager)
-  );
-
-  server.tool(
     "close_client",
     "Gracefully close a Roblox client process and remove it from the managed list. " +
     "Sends SIGTERM first, then force-kills with taskkill if needed. " +
@@ -96,20 +69,6 @@ export function registerAllTools(
     "The clientId is no longer valid after closing.",
     CloseClientShape,
     async (params) => handleCloseClient(params, processManager)
-  );
-
-  server.tool(
-    "manage_accounts",
-    "Manage stored Roblox accounts for launching clients. " +
-    "Cookies (authentication tokens) are stored encrypted at rest using AES-256-GCM. " +
-    "Three actions:" +
-    " 'add' — store a new account with an alias (e.g. 'alt1') and a .ROBLOSECURITY cookie. " +
-    " 'list' — show all stored accounts (shows aliases and dates only, never exposes cookies). " +
-    " 'remove' — delete a stored account by alias. " +
-    "How to get a .ROBLOSECURITY cookie: Open Roblox in Chrome/Edge → F12 DevTools → Application tab → Cookies → https://www.roblox.com → copy .ROBLOSECURITY value. " +
-    "After adding accounts, use launch_client with the alias to start Roblox authenticated as that user.",
-    ManageAccountsShape,
-    async (params) => handleManageAccounts(params, accountStore)
   );
 
   server.tool(

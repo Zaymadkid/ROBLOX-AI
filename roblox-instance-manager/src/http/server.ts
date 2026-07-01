@@ -68,24 +68,6 @@ export class DashboardServer {
       return;
     }
 
-    if (path === "/api/clients/restart") {
-      const clientId = url.searchParams.get("clientId");
-      if (!clientId) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Missing clientId" }));
-        return;
-      }
-      try {
-        const newPid = await this.processManager.restartClient(clientId);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, pid: newPid }));
-      } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: (err as Error).message }));
-      }
-      return;
-    }
-
     if (path === "/api/clients/close") {
       const clientId = url.searchParams.get("clientId");
       if (!clientId) {
