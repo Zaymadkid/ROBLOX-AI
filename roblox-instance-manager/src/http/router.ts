@@ -10,6 +10,7 @@ import {
   type WsRouteHandler,
 } from "./types.js";
 import { GET as getScriptLibrary, POST as postScriptLibrary, DELETE as deleteScriptLibrary } from "./routes/api/script-library.js";
+import { GET as getScriptBlox, POST as postScriptBlox } from "./routes/api/scriptblox.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const routesDir = path.join(__dirname, "routes");
@@ -221,6 +222,12 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
       if (req.method === "GET")    { await getScriptLibrary(req, res, url);    return; }
       if (req.method === "POST")   { await postScriptLibrary(req, res, url);   return; }
       if (req.method === "DELETE") { await deleteScriptLibrary(req, res, url); return; }
+    }
+
+    // ── ScriptBlox ───────────────────────────────────────────────────────────
+    if (url.pathname === "/api/scriptblox") {
+      if (req.method === "GET")  { getScriptBlox(req, res);              return; }
+      if (req.method === "POST") { await postScriptBlox(req, res, url);  return; }
     }
 
     if (url.pathname === "/api/clients/close") {
