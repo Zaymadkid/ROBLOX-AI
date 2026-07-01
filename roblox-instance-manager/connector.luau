@@ -66,8 +66,9 @@ local LuaEncode = loadstring(game:HttpGet("https://raw.githubusercontent.com/cha
 local cloneref = cloneref or function(x) return x end
 
 local KonstantDecompile = CreateDecompileFunction("Konstant", { Endpoint = "http://api.plusgiant5.com/konstant/decompile" })
-local MedalDecompile = CreateDecompileFunction("Medal", {
-    Endpoint = "https://medal.upio.dev/decompile",
+-- Migrated from medal.upio.dev to rocult/shiny fork: https://github.com/rocult/shiny
+local ShinyDecompile = CreateDecompileFunction("Shiny", {
+    Endpoint = "https://shiny.upio.dev/luau/decompile",
     EncodingCallback = base64_encode,
     FailedRequestCallback = function(_, path)
         return KonstantDecompile(path)
@@ -101,7 +102,7 @@ local LuaExpertDecompile = function(scriptPath: Script | ModuleScript | LocalScr
     LuaExpertLastCall = os.clock()
 
     if not okRequest or httpResult.StatusCode ~= 200 then
-        return MedalDecompile(scriptPath)
+        return ShinyDecompile(scriptPath)
     end
 
     return `-- Decompiled with lua.expert\n{httpResult.Body}`
