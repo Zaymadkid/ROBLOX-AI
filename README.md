@@ -16,7 +16,9 @@
 
 ## What is this?
 
-ROBLOX AI is a full-stack **Model Context Protocol (MCP) server** that gives your AI agent direct access to running Roblox game clients. It combines a process lifecycle manager, a real-time WebSocket bridge, and a suite of 30+ tools for in-game operations — all surfaced through a sleek local web dashboard.
+ROBLOX AI is a full-stack **Model Context Protocol (MCP) server** that gives your AI agent direct access to running Roblox game clients. It provides a real-time WebSocket bridge, a script library, and a suite of 30+ tools for in-game operations — all surfaced through a sleek local web dashboard.
+
+> **Companion project:** This server pairs with [**notpoiu/roblox-executor-mcp**](https://github.com/notpoiu/roblox-executor-mcp) — the authoritative Roblox executor MCP implementation. Run both together for the full toolkit: this project handles the bridge, script library, and dashboard; notpoiu's handles advanced executor features.
 
 ```
 AI Agent (Claude / Cursor / OpenCode)
@@ -43,6 +45,8 @@ AI Agent (Claude / Cursor / OpenCode)
 - **Better Auth Tickets** — Proper CSRF token flow via `/v2/logout`, `Origin` header, cookie normalization (strips browser warning prefixes), and pre-flight cookie validation with a clear error if a cookie is expired.
 - **Token Efficiency** — All tool outputs now support `maxOutputChars` (default 6000, max 32000). Truncation uses a head+tail strategy so the model never loses context at the end of long outputs. Each result is stamped with the source client to prevent cross-client context poisoning.
 - **Improved Semantic Search** — Replaced naive line-windowing with AST-aware function-level chunking. Feature extraction adds topics, services, remote names, API calls, and variable roles to each chunk. Search upgraded to **hybrid BM25 + dense vector with Reciprocal Rank Fusion (RRF)** — research shows +20–35% recall improvement.
+- **`script-grep` replaces `search-script-sources`** — The old `search-script-sources` pattern required the model to fetch raw script lists and scan them manually (multiple tool calls, high cost). `script-grep` runs server-side regex/literal search across all decompiled scripts in a single call, using JavaScript RegExp syntax — the exact patterns LLMs are trained to produce. Fewer tool calls = lower cost.
+- **roblox-executor-mcp integration** — Now pairs directly with [notpoiu/roblox-executor-mcp](https://github.com/notpoiu/roblox-executor-mcp) as the recommended companion executor MCP.
 
 ---
 

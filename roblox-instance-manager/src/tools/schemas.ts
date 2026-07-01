@@ -1,45 +1,5 @@
 import { z } from "zod";
 
-export const JoinGameShape = {
-  clientId: z.string().describe(
-    "The client ID returned by launch_client or list_clients. " +
-    "Format is a UUID string (e.g., 'a1b2c3d4-...'). " +
-    "Use list_clients to see all active clients and their IDs."
-  ),
-  placeId: z.number().describe(
-    "The Roblox place/experience ID to join (e.g. 4483381587 for Brookhaven, 6284583030 for Pet Simulator 99). " +
-    "This uses the robloclient:// URL protocol to trigger the teleport. " +
-    "The client must be running and logged in for this to work."
-  ),
-};
-
-export const ListClientsShape = {};
-
-export const ClientStatusShape = {
-  clientId: z.string().describe(
-    "The client ID to check (UUID format). " +
-    "Returns detailed health info: process running, uptime, current place, memory/PID. " +
-    "Use list_clients first to get available client IDs."
-  ),
-};
-
-export const RestartClientShape = {
-  clientId: z.string().describe(
-    "The client ID to restart (UUID format). " +
-    "This kills the Roblox process and relaunches it with the same account. " +
-    "Useful when a client crashes or freezes. " +
-    "You will need to reconnect the executor after restart."
-  ),
-};
-
-export const CloseClientShape = {
-  clientId: z.string().describe(
-    "The client ID to close (UUID format). " +
-    "Gracefully kills the Roblox process and removes it from the managed list. " +
-    "The executor connection to this client will be lost."
-  ),
-};
-
 export const ScreenshotShape = {
   clientId: z.string().describe(
     "The client ID to screenshot (UUID format). " +

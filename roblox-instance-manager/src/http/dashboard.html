@@ -708,11 +708,6 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Dashboard
       </div>
-      <div class="nav-item" data-page="clients">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        Clients
-        <span class="nav-badge" id="navClientBadge">0</span>
-      </div>
       <div class="nav-item" data-page="activity">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Activity Log
@@ -766,11 +761,6 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
       </div>
       <div class="stats">
         <div class="stat">
-          <div class="stat-label">Active Clients</div>
-          <div class="stat-value c-blue" id="dashClientCount">0</div>
-          <div class="stat-sub" id="dashClientDetail">0 running · 0 crashed</div>
-        </div>
-        <div class="stat">
           <div class="stat-label">Executor Bridge</div>
           <div class="stat-value c-red" id="dashExecutorStatus">Offline</div>
           <div class="stat-sub" id="dashExecutorDetail">not detected</div>
@@ -782,67 +772,6 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-            Active Clients
-          </div>
-          <span class="card-badge" id="dashClientBadge">0</span>
-        </div>
-        <div class="card-body">
-          <table>
-            <thead><tr>
-              <th>Client ID</th><th>PID</th><th>Account</th><th>Place ID</th><th>Status</th><th>Uptime</th><th>Actions</th>
-            </tr></thead>
-            <tbody id="dashClientsBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- CLIENTS -->
-    <div class="page" id="page-clients">
-      <div class="page-header">
-        <h1>Clients</h1>
-        <p>All managed Roblox client processes.</p>
-      </div>
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-label">Total</div>
-          <div class="stat-value c-muted" id="clTotal">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Running</div>
-          <div class="stat-value c-green" id="clRunning">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Crashed</div>
-          <div class="stat-value c-red" id="clCrashed">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Recovering</div>
-          <div class="stat-value c-amber" id="clRestarting">0</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-            All Clients
-          </div>
-          <span class="card-badge">Click row for details</span>
-        </div>
-        <div class="card-body">
-          <table>
-            <thead><tr>
-              <th>Client ID</th><th>PID</th><th>Account</th><th>Place ID</th><th>Status</th><th>Started</th><th>Uptime</th><th>Actions</th>
-            </tr></thead>
-            <tbody id="clientsFullBody"></tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
     <!-- ACTIVITY -->

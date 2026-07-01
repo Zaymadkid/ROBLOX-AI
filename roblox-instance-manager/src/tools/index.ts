@@ -2,10 +2,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProcessManager } from "../process/manager.js";
 import { ExecutorCoordinator } from "../bridge/coordinator.js";
 import { ScriptLibrary } from "../scripts/library.js";
-import { handleJoinGame } from "./impl/join-game.js";
-import { handleListClients } from "./impl/list-clients.js";
-import { handleClientStatus } from "./impl/client-status.js";
-import { handleCloseClient } from "./impl/close-client.js";
 import { handleScreenshot } from "./impl/screenshot.js";
 import { handleExecutorInfo } from "./impl/executor-info.js";
 import { handleSaveScript } from "./impl/save-script.js";
@@ -17,8 +13,7 @@ import {
   handleApproveScript,
 } from "./impl/script-library.js";
 import {
-  JoinGameShape, ListClientsShape,
-  ClientStatusShape, CloseClientShape,
+
   ScreenshotShape, ExecutorInfoShape,
   SaveScriptShape,
   ListScriptsShape, GetScriptShape, DeleteScriptShape,
@@ -31,46 +26,6 @@ export function registerAllTools(
   coordinator: ExecutorCoordinator,
   scriptLibrary?: ScriptLibrary | null
 ): void {
-  server.tool(
-    "join_game",
-    "Direct a running Roblox client to join a specific game by place ID. " +
-    "Uses the robloclient:// URL protocol to trigger a teleport. " +
-    "The client must be running and logged in. " +
-    "After the client joins the game, use roblox-executor-mcp tools to analyze the game (execute Luau, decompile scripts, spy remotes, etc.). " +
-    "Typical workflow: launch_client → join_game → roblox-executor tools for in-game analysis.",
-    JoinGameShape,
-    async (params) => handleJoinGame(params, processManager)
-  );
-
-  server.tool(
-    "list_clients",
-    "List all managed Roblox client processes with their current status. " +
-    "Returns: clientId (UUID), PID, account alias, current place ID, status (running/crashed/restarting), uptime, and start time. " +
-    "Use this to get client IDs for other tools like get_client_status, join_game, restart_client, close_client, take_screenshot. " +
-    "Also useful for monitoring — check if clients are still alive or have crashed.",
-    ListClientsShape,
-    async (params) => handleListClients(params, processManager)
-  );
-
-  server.tool(
-    "get_client_status",
-    "Get detailed health and status information for a specific Roblox client. " +
-    "Checks if the process is actually running (via process kill(0)), calculates uptime, and returns current place and account info. " +
-    "More detailed than list_clients — use this when you need to verify a specific client is healthy before running executor operations on it.",
-    ClientStatusShape,
-    async (params) => handleClientStatus(params, processManager)
-  );
-
-  server.tool(
-    "close_client",
-    "Gracefully close a Roblox client process and remove it from the managed list. " +
-    "Sends SIGTERM first, then force-kills with taskkill if needed. " +
-    "Use this when you're done with a client or need to free up system resources. " +
-    "The clientId is no longer valid after closing.",
-    CloseClientShape,
-    async (params) => handleCloseClient(params, processManager)
-  );
-
   server.tool(
     "take_screenshot",
     "Capture a full-screen screenshot and save it as a PNG file. " +
