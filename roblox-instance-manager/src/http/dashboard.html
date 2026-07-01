@@ -761,6 +761,11 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
       </div>
       <div class="stats">
         <div class="stat">
+          <div class="stat-label">Connected Clients</div>
+          <div class="stat-value c-blue" id="dashClientCount">0</div>
+          <div class="stat-sub" id="dashClientDetail">0 running · 0 crashed</div>
+        </div>
+        <div class="stat">
           <div class="stat-label">Executor Bridge</div>
           <div class="stat-value c-red" id="dashExecutorStatus">Offline</div>
           <div class="stat-sub" id="dashExecutorDetail">not detected</div>
@@ -769,6 +774,25 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
           <div class="stat-label">Server Uptime</div>
           <div class="stat-value c-muted" id="dashUptime">-</div>
           <div class="stat-sub" id="dashStarted">started --</div>
+        </div>
+      </div>
+
+      <!-- Connected clients card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Connected Clients
+          </div>
+          <span class="card-badge" id="dashClientBadge">0</span>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead><tr>
+              <th>Username</th><th>Place</th><th>Status</th><th>Transport</th><th>Uptime</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="dashClientsBody"></tbody>
+          </table>
         </div>
       </div>
 
@@ -1179,13 +1203,13 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
     </div>
     <div class="modal-body">
       <div class="detail-grid">
-        <div class="detail-field"><label>Client ID</label><div class="val mono" id="detId">-</div></div>
-        <div class="detail-field"><label>PID</label><div class="val mono" id="detPid">-</div></div>
-        <div class="detail-field"><label>Account</label><div class="val fw-600" id="detAccount">-</div></div>
-        <div class="detail-field"><label>Place ID</label><div class="val" id="detPlace">-</div></div>
+        <div class="detail-field"><label>Username</label><div class="val fw-600" id="detAccount">-</div></div>
+        <div class="detail-field"><label>Transport</label><div class="val mono" id="detTransport">-</div></div>
+        <div class="detail-field"><label>Place</label><div class="val" id="detPlace">-</div></div>
+        <div class="detail-field"><label>Place ID</label><div class="val mono" id="detPlaceId">-</div></div>
         <div class="detail-field"><label>Status</label><div class="val" id="detStatus">-</div></div>
         <div class="detail-field"><label>Uptime</label><div class="val" id="detUptime">-</div></div>
-        <div class="detail-field full"><label>Started At</label><div class="val" id="detStarted">-</div></div>
+        <div class="detail-field full"><label>Client ID</label><div class="val mono" style="font-size:11px" id="detId">-</div></div>
       </div>
     </div>
   </div>
@@ -1358,13 +1382,13 @@ document.querySelectorAll('.nav-item').forEach(item => {
 function closeDetail() { document.getElementById('detailOverlay').classList.remove('open'); }
 function showDetail(c) {
   document.getElementById('detailOverlay').classList.add('open');
-  document.getElementById('detId').textContent       = c.clientId || '-';
-  document.getElementById('detPid').textContent      = c.pid || 'Manual';
-  document.getElementById('detAccount').textContent  = c.accountName || '-';
-  document.getElementById('detPlace').textContent    = c.placeId || 'none';
-  document.getElementById('detStatus').innerHTML     = statusBadge(c.status, c.isManual);
-  document.getElementById('detUptime').textContent   = c.isManual ? 'N/A' : fmtUptime(c.uptimeSeconds);
-  document.getElementById('detStarted').textContent  = c.isManual ? 'N/A' : fmtDate(c.startedAt);
+  document.getElementById('detAccount').textContent   = c.accountName || '-';
+  document.getElementById('detTransport').textContent = c.transport || 'ws';
+  document.getElementById('detPlace').textContent     = c.placeName || '-';
+  document.getElementById('detPlaceId').textContent   = c.placeId || '-';
+  document.getElementById('detStatus').innerHTML      = statusBadge(c.status, c.isManual);
+  document.getElementById('detUptime').textContent    = c.isManual ? 'N/A' : fmtUptime(c.uptimeSeconds);
+  document.getElementById('detId').textContent        = c.clientId || '-';
 }
 document.getElementById('detailOverlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeDetail();
@@ -1492,66 +1516,47 @@ async function closeClient(id, event) {
 
 /* ── Render ── */
 function renderClients(clients) {
-  const running    = clients?.filter(c => c.status === 'running').length    || 0;
-  const crashed    = clients?.filter(c => c.status === 'crashed').length    || 0;
-  const restarting = clients?.filter(c => c.status === 'restarting').length || 0;
+  const running = clients?.filter(c => c.status === 'running').length || 0;
+  const crashed = clients?.filter(c => c.status === 'crashed').length || 0;
+  const count   = clients?.length || 0;
 
-  document.getElementById('navClientBadge').textContent   = clients?.length || 0;
-  document.getElementById('dashClientCount').textContent  = clients?.length || 0;
+  document.getElementById('dashClientCount').textContent  = count;
   document.getElementById('dashClientDetail').textContent = `${running} running · ${crashed} crashed`;
-  document.getElementById('dashClientBadge').textContent  = `${clients?.length || 0} client${clients?.length !== 1 ? 's' : ''}`;
-  document.getElementById('clTotal').textContent      = clients?.length || 0;
-  document.getElementById('clRunning').textContent    = running;
-  document.getElementById('clCrashed').textContent    = crashed;
-  document.getElementById('clRestarting').textContent = restarting;
+  document.getElementById('dashClientBadge').textContent  = `${count} client${count !== 1 ? 's' : ''}`;
 
-  const rowHtml = (c, extraCol) => `
+  const rowHtml = c => `
     <tr class="clickable" onclick='showDetail(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
-      <td><span class="mono">${c.clientId?.slice(0,8)}…</span></td>
-      <td><span class="mono">${c.pid || 'Manual'}</span></td>
       <td class="fw-600">${c.accountName}</td>
-      <td><span class="mono">${c.placeId || '-'}</span></td>
+      <td><span class="mono" style="font-size:11px">${c.placeName || c.placeId || '-'}</span></td>
       <td>${statusBadge(c.status, c.isManual)}</td>
-      ${extraCol ? `<td>${c.isManual ? '-' : fmtDate(c.startedAt)}</td>` : ''}
+      <td><span class="badge" style="background:var(--bg-2);color:var(--text-3);border:1px solid var(--border)">${c.transport || 'ws'}</span></td>
       <td>${c.isManual ? '-' : fmtUptime(c.uptimeSeconds)}</td>
       <td class="actions-cell">
-        <button class="btn btn-amber btn-restart" data-id="${c.clientId}" ${c.isManual ? 'disabled' : ''} onclick="restartClient('${c.clientId}', event)">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          Restart
-        </button>
         <button class="btn btn-red btn-close" data-id="${c.clientId}" onclick="closeClient('${c.clientId}', event)">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Close
+          Disconnect
         </button>
       </td>
     </tr>`;
 
-  const noClients = emptyRow(7,
+  const noClients = emptyRow(6,
     `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
-    'No active clients'
+    'No clients connected — run the loader in Roblox'
   );
 
   document.getElementById('dashClientsBody').innerHTML =
-    clients?.length ? clients.map(c => rowHtml(c, false)).join('') : noClients;
+    clients?.length ? clients.map(rowHtml).join('') : noClients;
 
-  const noClientsAll = emptyRow(8,
-    `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
-    'No client processes detected'
-  );
-
-  document.getElementById('clientsFullBody').innerHTML =
-    clients?.length ? clients.map(c => rowHtml(c, true)).join('') : noClientsAll;
-
-  // Diff for activity log
+  // Activity log diffs
   if (JSON.stringify(clients) !== JSON.stringify(clientsCache)) {
     const added = clients?.filter(c => !clientsCache.some(o => o.clientId === c.clientId));
     added?.forEach(c => {
-      logActivity(`Client connected: ${c.accountName} (PID ${c.pid})`, 'info');
+      logActivity(`Client connected: ${c.accountName} @ ${c.placeName || c.placeId || '?'} (${c.transport})`, 'info');
       toast(`${c.accountName} connected`, 'success');
     });
     const removed = clientsCache?.filter(o => !clients?.some(c => c.clientId === o.clientId));
     removed?.forEach(c => {
-      logActivity(`Client removed: ${c.accountName}`, 'warn');
+      logActivity(`Client disconnected: ${c.accountName}`, 'warn');
       toast(`${c.accountName} disconnected`, 'error');
     });
     clientsCache = clients || [];
