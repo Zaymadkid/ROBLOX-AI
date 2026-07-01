@@ -1172,13 +1172,23 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
         </div>
         <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
           <p style="font-size:12px;color:var(--text-2);line-height:1.5">
-            Publishing happens directly from your browser using your active ScriptBlox session — no token copy needed.<br>
-            <span style="color:var(--text-3)">Just make sure you are <strong style="color:var(--text-2)">logged into scriptblox.com</strong> in this same browser, then click Publish on any script.</span>
+            Two cookies from scriptblox.com are required. Open DevTools (F12) → Application → Cookies → scriptblox.com.<br>
+            <span style="color:var(--text-3)"><span class="mono">token</span> is permanent. <span class="mono">cf_clearance</span> expires every ~30 min — update it when publish fails.</span>
           </p>
-          <a href="https://scriptblox.com/login" target="_blank" class="btn btn-blue" style="align-self:flex-start;text-decoration:none">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Log into ScriptBlox
-          </a>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);width:100px;flex-shrink:0">token</span>
+              <input id="sbTokenInput" type="password" class="modal-input" placeholder="eyJ…" style="flex:1;max-width:360px">
+              <button class="btn btn-blue" onclick="saveScriptBloxToken()">Save</button>
+              <span id="sbTokenStatus" style="font-size:11px;color:var(--text-3)"></span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);width:100px;flex-shrink:0">cf_clearance</span>
+              <input id="sbCfInput" type="password" class="modal-input" placeholder="Paste cf_clearance value…" style="flex:1;max-width:360px">
+              <button class="btn btn-blue" onclick="saveScriptBloxCf()">Save</button>
+              <span id="sbCfStatus" style="font-size:11px;color:var(--text-3)"></span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1846,44 +1856,67 @@ async function loadScriptBloxStatus() {
     const data = await api('/api/scriptblox');
     sbConfigured = data?.configured ?? false;
     const badge = document.getElementById('sbStatusBadge');
-    const clearBtn = document.getElementById('sbClearBtn');
     if (badge) {
-      badge.textContent = sbConfigured ? 'Connected' : 'Not configured';
-      badge.style.cssText = sbConfigured
-        ? 'background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.2)'
-        : 'background:var(--bg-2);color:var(--text-3);border:1px solid var(--border)';
+      if (sbConfigured) {
+        badge.textContent = 'Ready';
+        badge.style.cssText = 'background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.2)';
+      } else {
+        const missing = [];
+        if (!data?.hasToken) missing.push('token');
+        if (!data?.hasCfClearance) missing.push('cf_clearance');
+        badge.textContent = missing.length ? `Missing: ${missing.join(', ')}` : 'Not configured';
+        badge.style.cssText = 'background:var(--bg-2);color:var(--text-3);border:1px solid var(--border)';
+      }
     }
-    if (clearBtn) clearBtn.style.display = sbConfigured ? '' : 'none';
+    const tokenStatus = document.getElementById('sbTokenStatus');
+    const cfStatus = document.getElementById('sbCfStatus');
+    if (tokenStatus) tokenStatus.textContent = data?.hasToken ? '✓ Saved' : '';
+    if (tokenStatus) tokenStatus.style.color = data?.hasToken ? 'var(--green)' : 'var(--text-3)';
+    if (cfStatus) cfStatus.textContent = data?.hasCfClearance ? '✓ Saved' : '';
+    if (cfStatus) cfStatus.style.color = data?.hasCfClearance ? 'var(--green)' : 'var(--text-3)';
   } catch { /* non-critical */ }
 }
 
 async function saveScriptBloxToken() {
   const token = document.getElementById('sbTokenInput').value.trim();
-  if (!token) { toast('Paste a token first.', 'error'); return; }
+  if (!token) { toast('Paste your token first.', 'error'); return; }
   try {
     const r = await fetch('/api/scriptblox?action=set-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
     const data = await r.json();
     if (data.success) {
-      toast('ScriptBlox token saved!', 'success');
+      toast('Token saved!', 'success');
       document.getElementById('sbTokenInput').value = '';
       loadScriptBloxStatus();
-    } else {
-      toast(data.error || 'Failed to save token.', 'error');
-    }
-  } catch { toast('Failed to save token.', 'error'); }
+    } else { toast(data.error || 'Failed.', 'error'); }
+  } catch { toast('Failed.', 'error'); }
+}
+
+async function saveScriptBloxCf() {
+  const value = document.getElementById('sbCfInput').value.trim();
+  if (!value) { toast('Paste cf_clearance first.', 'error'); return; }
+  try {
+    const r = await fetch('/api/scriptblox?action=set-cf-clearance', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    });
+    const data = await r.json();
+    if (data.success) {
+      toast('cf_clearance saved!', 'success');
+      document.getElementById('sbCfInput').value = '';
+      loadScriptBloxStatus();
+    } else { toast(data.error || 'Failed.', 'error'); }
+  } catch { toast('Failed.', 'error'); }
 }
 
 async function clearScriptBloxToken() {
   await fetch('/api/scriptblox?action=set-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token: null }),
   });
-  toast('ScriptBlox token cleared.', 'info');
+  toast('Token cleared.', 'info');
   loadScriptBloxStatus();
 }
 
@@ -1896,37 +1929,23 @@ async function publishToScriptBlox(scriptId, btn) {
   btn.innerHTML = `<svg width=11 height=11 viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Publishing…`;
 
   try {
-    // Make the request directly from the browser — this sends the browser's
-    // existing ScriptBlox cookies (token + cf_clearance) automatically,
-    // bypassing Cloudflare bot protection that blocks server-side requests.
-    const r = await fetch('https://scriptblox.com/api/script/create', {
+    const r = await fetch('/api/scriptblox?action=publish', {
       method: 'POST',
-      credentials: 'include',  // send all scriptblox.com cookies
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: script.name,
         script: script.code,
-        ...(script.game ? { game: { name: script.game } } : {}),
+        game: script.game || undefined,
         isUniversal: !script.game,
-        isPatched: false,
-        scriptType: 'free',
       }),
     });
-
-    let data = {};
-    try { data = await r.json(); } catch { /* non-JSON response */ }
-
-    if (r.ok) {
-      const slug = data?.result?.slug || data?.slug || '';
-      const url = slug ? `https://scriptblox.com/script/${slug}` : 'https://scriptblox.com';
-      toast(`Published! <a href="${url}" target="_blank" style="color:var(--blue);text-decoration:underline">View on ScriptBlox</a>`, 'success');
+    const data = await r.json();
+    if (data.success) {
+      toast(`Published! <a href="${data.url}" target="_blank" style="color:var(--blue);text-decoration:underline">View on ScriptBlox</a>`, 'success');
     } else {
-      const msg = data?.message || data?.error || `HTTP ${r.status}`;
-      // If still 403, user may not be logged into ScriptBlox in this browser
-      if (r.status === 403) {
-        toast('ScriptBlox returned 403 — make sure you are logged into scriptblox.com in this browser tab.', 'error');
+      const msg = data.error || `HTTP ${r.status}`;
+      if (msg.includes('cf_clearance') || r.status === 403) {
+        toast('Publish blocked — update your cf_clearance in System Info (expires ~30min).', 'error');
       } else {
         toast(`Publish failed: ${msg}`, 'error');
       }

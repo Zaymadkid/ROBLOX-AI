@@ -7,10 +7,14 @@ function json(res: ServerResponse, status: number, data: unknown): void {
   res.end(JSON.stringify(data));
 }
 
-/** GET /api/scriptblox — return token status (never the token itself) */
+/** GET /api/scriptblox — return config status */
 export function GET(_req: IncomingMessage, res: ServerResponse): void {
   const client = getScriptBloxClient();
-  json(res, 200, { configured: client?.isConfigured() ?? false });
+  json(res, 200, {
+    configured: client?.isConfigured() ?? false,
+    hasToken: !!client?.getToken(),
+    hasCfClearance: !!client?.getCfClearance(),
+  });
 }
 
 /** POST /api/scriptblox?action=set-token  { token }
@@ -26,7 +30,17 @@ export async function POST(req: IncomingMessage, res: ServerResponse, url: URL):
     try {
       const body = await readJsonBody<{ token?: string }>(req);
       client.setToken(body.token ?? null);
-      return json(res, 200, { success: true, configured: client.isConfigured() });
+      return json(res, 200, { success: true, hasToken: !!client.getToken(), configured: client.isConfigured() });
+    } catch {
+      return json(res, 400, { error: "Invalid JSON" });
+    }
+  }
+
+  if (action === "set-cf-clearance") {
+    try {
+      const body = await readJsonBody<{ value?: string }>(req);
+      client.setCfClearance(body.value ?? null);
+      return json(res, 200, { success: true, hasCfClearance: !!client.getCfClearance(), configured: client.isConfigured() });
     } catch {
       return json(res, 400, { error: "Invalid JSON" });
     }

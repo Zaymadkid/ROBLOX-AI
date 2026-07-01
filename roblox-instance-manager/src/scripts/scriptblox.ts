@@ -3,6 +3,7 @@ import { join } from "path";
 
 export interface ScriptBloxSettings {
   token: string | null;
+  cfClearance: string | null;
 }
 
 export interface ScriptBloxPublishParams {
@@ -32,11 +33,11 @@ export class ScriptBloxClient {
   }
 
   private load(): ScriptBloxSettings {
-    if (!existsSync(this.filePath)) return { token: null };
+    if (!existsSync(this.filePath)) return { token: null, cfClearance: null };
     try {
       return JSON.parse(readFileSync(this.filePath, "utf-8"));
     } catch {
-      return { token: null };
+      return { token: null, cfClearance: null };
     }
   }
 
@@ -44,23 +45,28 @@ export class ScriptBloxClient {
     writeFileSync(this.filePath, JSON.stringify(this.settings, null, 2), "utf-8");
   }
 
-  getToken(): string | null {
-    return this.settings.token;
-  }
+  getToken(): string | null { return this.settings.token; }
+  getCfClearance(): string | null { return this.settings.cfClearance; }
 
   setToken(token: string | null): void {
     this.settings.token = token ? token.trim() : null;
     this.save();
   }
 
+  setCfClearance(value: string | null): void {
+    this.settings.cfClearance = value ? value.trim() : null;
+    this.save();
+  }
+
   isConfigured(): boolean {
-    return !!this.settings.token;
+    return !!(this.settings.token && this.settings.cfClearance);
   }
 
   async publish(params: ScriptBloxPublishParams): Promise<ScriptBloxPublishResult> {
     const token = this.settings.token;
-    if (!token) {
-      return { success: false, error: "No ScriptBlox token configured. Add it in the dashboard settings." };
+    const cfClearance = this.settings.cfClearance;
+    if (!token || !cfClearance) {
+      return { success: false, error: "ScriptBlox token and cf_clearance are required. Add both in System Info." };
     }
 
     const body: Record<string, unknown> = {
@@ -80,10 +86,12 @@ export class ScriptBloxClient {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Cookie": `token=${token}; cf_clearance=${cfClearance}`,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
           "Origin": SB_BASE,
           "Referer": `${SB_BASE}/`,
+          "Accept": "application/json, text/plain, */*",
+          "Accept-Language": "en-US,en;q=0.9",
         },
         body: JSON.stringify(body),
       });
