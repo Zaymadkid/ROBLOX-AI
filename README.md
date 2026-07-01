@@ -144,10 +144,19 @@ claude mcp add roblox-instance-manager node "/absolute/path/to/ROBLOX-AI/roblox-
 
 ## Connecting a Roblox Client
 
-Run this in your executor inside any Roblox game:
+Paste this into your executor inside any Roblox game, or drop [`loader.luau`](loader.luau) into your executor's auto-execute folder:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Zaymadkid/ROBLOX-AI/main/roblox-instance-manager/connector.luau"))()
+local url = "https://raw.githubusercontent.com/Zaymadkid/ROBLOX-AI/main/roblox-instance-manager/connector.luau"
+local success, err = pcall(function()
+    loadstring(game:HttpGet(url))()
+end)
+
+if success then
+    print("[MCP] Harness loaded and connected successfully!")
+else
+    warn("[MCP] Failed to load harness:", tostring(err))
+end
 ```
 
 The client registers itself with the bridge and appears in the dashboard instantly.
