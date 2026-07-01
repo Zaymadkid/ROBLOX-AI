@@ -442,8 +442,14 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
   transition: border-color 0.15s;
 }
 .tool-card:hover { border-color: var(--border-2); }
-.tool-name { font-family: var(--mono); font-size: 12px; color: var(--blue); font-weight: 500; }
+.tool-name { font-family: var(--mono); font-size: 12px; color: var(--blue); font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .tool-desc { font-size: 11px; color: var(--text-3); line-height: 1.4; }
+.tool-badge-new {
+  font-family: var(--sans); font-size: 9px; font-weight: 600;
+  background: var(--amber-dim); color: var(--amber);
+  border: 1px solid rgba(245,158,11,0.25); border-radius: 99px;
+  padding: 1px 6px; white-space: nowrap; letter-spacing: 0.3px;
+}
 
 /* ── Callout ── */
 .callout {
@@ -945,44 +951,304 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
     <!-- EXECUTOR -->
     <div class="page" id="page-executor">
       <div class="page-header">
-        <h1>Executor</h1>
-        <p>WebSocket bridge status and available in-game APIs.</p>
+        <h1>Executor Integration</h1>
+        <p>Bridge status, transport mode, and full tool reference for all 30+ available APIs.</p>
       </div>
+
+      <!-- Bridge status card -->
       <div class="exec-status-card" id="execStatusCard">
         <div class="exec-icon offline" id="execIcon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         </div>
-        <div class="exec-info">
+        <div class="exec-info" style="flex:1">
           <h4 id="execTitle">Executor WS Bridge — Offline</h4>
           <p id="execDesc">No active Roblox clients connected to the internal bridge.</p>
         </div>
+        <div id="execTransportBadge" style="display:none;flex-shrink:0"></div>
       </div>
+
+      <!-- Transport info -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="card" style="margin:0">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              WebSocket Transport
+            </div>
+            <span class="badge badge-running"><span class="badge-dot"></span>Preferred</span>
+          </div>
+          <div style="padding:12px 16px;font-size:12px;color:var(--text-2);line-height:1.6">
+            Full-duplex, real-time. Commands sent instantly. Supported by most modern executors. Uses port <span class="mono" style="color:var(--blue)">16384</span>.
+          </div>
+        </div>
+        <div class="card" style="margin:0">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              HTTP Polling Transport
+            </div>
+            <span class="badge badge-manual"><span class="badge-dot"></span>Fallback</span>
+          </div>
+          <div style="padding:12px 16px;font-size:12px;color:var(--text-2);line-height:1.6">
+            Polls every 100ms. Commands queue server-side — multiple concurrent tool calls are batched and delivered together on the next poll cycle.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tool categories -->
+
+      <!-- Code Execution -->
       <div class="card">
         <div class="card-header">
           <div class="card-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            Available APIs
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Code Execution
           </div>
-          <span class="card-badge">15 tools</span>
+          <span class="card-badge">3 tools</span>
         </div>
         <div class="tools-grid">
-          <div class="tool-card"><div class="tool-name">execute</div><div class="tool-desc">Run raw Luau source code</div></div>
-          <div class="tool-card"><div class="tool-name">get-data-by-code</div><div class="tool-desc">Execute Luau and return values</div></div>
-          <div class="tool-card"><div class="tool-name">execute-file</div><div class="tool-desc">Run local .lua/.luau files</div></div>
-          <div class="tool-card"><div class="tool-name">get-script-content</div><div class="tool-desc">Decompile in-game scripts</div></div>
-          <div class="tool-card"><div class="tool-name">script-grep</div><div class="tool-desc">Search decompiled scripts</div></div>
-          <div class="tool-card"><div class="tool-name">semantic-search</div><div class="tool-desc">Find scripts by description</div></div>
-          <div class="tool-card"><div class="tool-name">search-instances</div><div class="tool-desc">Query engine components</div></div>
-          <div class="tool-card"><div class="tool-name">get-descendants-tree</div><div class="tool-desc">Build object hierarchies</div></div>
-          <div class="tool-card"><div class="tool-name">ensure-remote-spy</div><div class="tool-desc">Inject network listeners</div></div>
-          <div class="tool-card"><div class="tool-name">get-remote-spy-logs</div><div class="tool-desc">List intercepted events</div></div>
-          <div class="tool-card"><div class="tool-name">block-remote</div><div class="tool-desc">Suppress network traffic</div></div>
-          <div class="tool-card"><div class="tool-name">ignore-remote</div><div class="tool-desc">Stop logging specific events</div></div>
-          <div class="tool-card"><div class="tool-name">click-button</div><div class="tool-desc">Trigger UI buttons</div></div>
-          <div class="tool-card"><div class="tool-name">type-text-box</div><div class="tool-desc">Insert text into frames</div></div>
-          <div class="tool-card"><div class="tool-name">screenshot-window</div><div class="tool-desc">Capture game viewport</div></div>
+          <div class="tool-card">
+            <div class="tool-name">execute</div>
+            <div class="tool-desc">Fire-and-forget Luau execution. Does not return output — use get-data-by-code when values are needed.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">get-data-by-code
+              <span class="tool-badge-new">maxOutputChars</span>
+            </div>
+            <div class="tool-desc">Execute Luau and return serialized values. Supports timeout up to 120s. Output stamped with client identity.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">execute-file</div>
+            <div class="tool-desc">Read and execute a local .lua or .luau file inside the active client.</div>
+          </div>
         </div>
       </div>
+
+      <!-- Script Analysis -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Script Analysis
+          </div>
+          <span class="card-badge">5 tools</span>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-name">get-script-content
+              <span class="tool-badge-new">maxLines · improved</span>
+            </div>
+            <div class="tool-desc">Decompile a script by path or proxy reference. Supports startLine/endLine/maxLines (default 80, max 2000) with continuation hints.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">script-grep
+              <span class="tool-badge-new">maxOutputChars</span>
+            </div>
+            <div class="tool-desc">Regex or literal search across all decompiled scripts. Supports contextLines, maxMatchesPerScript, maxResults cap.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">semantic-search-scripts
+              <span class="tool-badge-new">hybrid BM25+RRF</span>
+            </div>
+            <div class="tool-desc">Find scripts by behavior description. Upgraded to hybrid dense + lexical search with Reciprocal Rank Fusion. Supports requireFullIndex and indexOnly modes.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">get-console-output
+              <span class="tool-badge-new">filter · maxOutputChars</span>
+            </div>
+            <div class="tool-desc">Read Roblox developer console logs. Default limit 10. Supports text filter and NewestFirst/OldestFirst ordering.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">get-game-info</div>
+            <div class="tool-desc">Fetch place ID, universe ID, game server details and version from the active client.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instance Inspection -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Instance Inspection
+          </div>
+          <span class="card-badge">2 tools</span>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-name">search-instances
+              <span class="tool-badge-new">maxOutputChars</span>
+            </div>
+            <div class="tool-desc">CSS-selector query on the game hierarchy. Supports class, name (#), tag (.), property ([Anchored=false]), attribute ([$QuestId]), combinators (> >>), :not(), :has().</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">get-descendants-tree
+              <span class="tool-badge-new">maxOutputChars</span>
+            </div>
+            <div class="tool-desc">Depth-limited object tree from any root instance. Supports classFilter to narrow results, maxDepth and maxChildren per node.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Remote Spy -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Remote Spy (Cobalt)
+          </div>
+          <span class="card-badge">5 tools</span>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-name">ensure-remote-spy</div>
+            <div class="tool-desc">Load or verify the Cobalt remote spy. Must be called before any other remote spy tool.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">get-remote-spy-logs
+              <span class="tool-badge-new">maxOutputChars</span>
+            </div>
+            <div class="tool-desc">List captured remote and bindable calls. Filter by direction (Incoming/Outgoing/Both) and remote name.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">block-remote</div>
+            <div class="tool-desc">Block or unblock a remote by exact name and direction. Blocked remotes are silently dropped.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">ignore-remote</div>
+            <div class="tool-desc">Stop logging a remote without blocking it. The remote still fires, just isn't recorded.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">clear-remote-spy-logs</div>
+            <div class="tool-desc">Wipe all captured remote spy logs from the buffer.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UI Automation & Windows -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            UI Automation & Windows
+          </div>
+          <span class="card-badge">4 tools</span>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-name">click-button</div>
+            <div class="tool-desc">Fire Activated / MouseButton1Click signals on a TextButton or ImageButton by instance path.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">type-text-box</div>
+            <div class="tool-desc">Type text into a TextBox via VirtualInputManager keystrokes or direct Text property set.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">list-roblox-windows</div>
+            <div class="tool-desc">List visible Roblox OS windows with PIDs and titles for disambiguation.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">screenshot-window</div>
+            <div class="tool-desc">Capture a Roblox window as a PNG via Windows APIs. Specify PID when multiple windows are open.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Script Library -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            Script Library
+            <span style="font-size:10px;background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.25);border-radius:99px;padding:1px 7px;font-weight:600">NEW</span>
+          </div>
+          <span class="card-badge">6 tools</span>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-name">save_script_to_library</div>
+            <div class="tool-desc">Save a Luau script as PENDING for user review. Always confirm with the user before calling. Accepts name, description, code, game, placeId, features[], tags[].</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">list_scripts</div>
+            <div class="tool-desc">Browse saved scripts. Filter by status (approved/pending) or game name. Returns IDs, metadata, and timestamps — no code unless requested.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">get_script</div>
+            <div class="tool-desc">Fetch a specific script by ID including its full Luau code. Use list_scripts first to find the ID.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">update_script</div>
+            <div class="tool-desc">Edit any field of a saved script. Only fields you provide are changed. Auto-updates the updatedAt timestamp.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">delete_script</div>
+            <div class="tool-desc">Permanently delete a script by ID. Cannot be undone — always confirm with the user first.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">approve_script</div>
+            <div class="tool-desc">Approve a pending script directly from chat. Use when the user confirms approval without opening the dashboard.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Process Lifecycle -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            Process Lifecycle
+          </div>
+          <span class="card-badge">10 tools</span>
+        </div>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-name">launch_client
+              <span class="tool-badge-new">multi-instance</span>
+            </div>
+            <div class="tool-desc">Launch RobloxPlayerBeta.exe directly, bypassing Fishstrap/Bloxstrap. Releases singleton mutex after startup to allow multiple concurrent instances.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">join_game</div>
+            <div class="tool-desc">Teleport a running client to a specific place ID using the robloclient:// protocol.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">list_clients</div>
+            <div class="tool-desc">List all managed Roblox processes with status, uptime, PID, account alias, and current place.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">get_client_status</div>
+            <div class="tool-desc">Deep health check on a specific client — process liveness, uptime, place, memory.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">restart_client</div>
+            <div class="tool-desc">Kill and relaunch a client with a fresh auth ticket. Same clientId, new PID.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">close_client</div>
+            <div class="tool-desc">Gracefully terminate a client. SIGTERM first, then taskkill force if needed.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">manage_accounts</div>
+            <div class="tool-desc">Add, list, or remove stored Roblox accounts. Cookies encrypted at rest with AES-256-GCM.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">take_screenshot</div>
+            <div class="tool-desc">Full-screen capture via PowerShell System.Drawing. Returns the file path to the PNG.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">get_executor_info</div>
+            <div class="tool-desc">Check bridge connectivity and enumerate all available executor tools with descriptions.</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">list-clients
+              <span class="tool-badge-new">executor</span>
+            </div>
+            <div class="tool-desc">List executor-connected clients (WebSocket sessions). Use set-active-client to switch the active target.</div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- SYSTEM -->
@@ -1514,6 +1780,7 @@ function renderAccounts(accounts) {
 
 function renderExecutor(exec) {
   const icon = document.getElementById('execIcon');
+  const transportBadge = document.getElementById('execTransportBadge');
   if (exec?.running) {
     document.getElementById('dashExecutorStatus').textContent = 'Online';
     document.getElementById('dashExecutorStatus').className  = 'stat-value c-green';
@@ -1522,6 +1789,10 @@ function renderExecutor(exec) {
     icon.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
     document.getElementById('execTitle').textContent = 'Executor WS Bridge — Active';
     document.getElementById('execDesc').textContent  = `Listening on localhost:16384. Socket tunnel established.`;
+    if (transportBadge) {
+      transportBadge.style.display = 'flex';
+      transportBadge.innerHTML = `<span class="badge badge-running"><span class="badge-dot"></span>WebSocket</span>`;
+    }
   } else {
     document.getElementById('dashExecutorStatus').textContent = 'Offline';
     document.getElementById('dashExecutorStatus').className  = 'stat-value c-red';
@@ -1530,6 +1801,7 @@ function renderExecutor(exec) {
     icon.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`;
     document.getElementById('execTitle').textContent = 'Executor WS Bridge — Inactive';
     document.getElementById('execDesc').textContent  = 'Launch a Roblox instance to establish the socket tunnel.';
+    if (transportBadge) transportBadge.style.display = 'none';
   }
 }
 
