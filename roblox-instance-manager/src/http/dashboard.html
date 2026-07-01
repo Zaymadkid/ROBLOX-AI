@@ -1172,17 +1172,13 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
         </div>
         <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
           <p style="font-size:12px;color:var(--text-2);line-height:1.5">
-            Paste your ScriptBlox auth token to enable one-click publishing from the Script Library.<br>
-            <span style="color:var(--text-3)">Get it: Log into scriptblox.com → DevTools (F12) → Application → Cookies → <span class="mono">token</span> value.</span>
+            Publishing happens directly from your browser using your active ScriptBlox session — no token copy needed.<br>
+            <span style="color:var(--text-3)">Just make sure you are <strong style="color:var(--text-2)">logged into scriptblox.com</strong> in this same browser, then click Publish on any script.</span>
           </p>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="sbTokenInput" type="password" class="modal-input" placeholder="Paste your ScriptBlox token…" style="flex:1;max-width:420px">
-            <button class="btn btn-blue" onclick="saveScriptBloxToken()">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              Save Token
-            </button>
-            <button class="btn btn-red" id="sbClearBtn" onclick="clearScriptBloxToken()" style="display:none">Clear</button>
-          </div>
+          <a href="https://scriptblox.com/login" target="_blank" class="btn btn-blue" style="align-self:flex-start;text-decoration:none">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Log into ScriptBlox
+          </a>
         </div>
       </div>
     </div>
@@ -1892,11 +1888,6 @@ async function clearScriptBloxToken() {
 }
 
 async function publishToScriptBlox(scriptId, btn) {
-  if (!sbConfigured) {
-    toast('Add your ScriptBlox token in System Info first.', 'error');
-    return;
-  }
-
   const script = scriptsCache.find(s => s.id === scriptId);
   if (!script) { toast('Script not found.', 'error'); return; }
 
@@ -1905,21 +1896,40 @@ async function publishToScriptBlox(scriptId, btn) {
   btn.innerHTML = `<svg width=11 height=11 viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2 style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Publishing…`;
 
   try {
-    const r = await fetch('/api/scriptblox?action=publish', {
+    // Make the request directly from the browser — this sends the browser's
+    // existing ScriptBlox cookies (token + cf_clearance) automatically,
+    // bypassing Cloudflare bot protection that blocks server-side requests.
+    const r = await fetch('https://scriptblox.com/api/script/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',  // send all scriptblox.com cookies
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         title: script.name,
         script: script.code,
-        game: script.game || undefined,
+        ...(script.game ? { game: { name: script.game } } : {}),
         isUniversal: !script.game,
+        isPatched: false,
+        scriptType: 'free',
       }),
     });
-    const data = await r.json();
-    if (data.success) {
-      toast(`Published! <a href="${data.url}" target="_blank" style="color:var(--blue);text-decoration:underline">View on ScriptBlox</a>`, 'success');
+
+    let data = {};
+    try { data = await r.json(); } catch { /* non-JSON response */ }
+
+    if (r.ok) {
+      const slug = data?.result?.slug || data?.slug || '';
+      const url = slug ? `https://scriptblox.com/script/${slug}` : 'https://scriptblox.com';
+      toast(`Published! <a href="${url}" target="_blank" style="color:var(--blue);text-decoration:underline">View on ScriptBlox</a>`, 'success');
     } else {
-      toast(`Publish failed: ${data.error || 'unknown error'}`, 'error');
+      const msg = data?.message || data?.error || `HTTP ${r.status}`;
+      // If still 403, user may not be logged into ScriptBlox in this browser
+      if (r.status === 403) {
+        toast('ScriptBlox returned 403 — make sure you are logged into scriptblox.com in this browser tab.', 'error');
+      } else {
+        toast(`Publish failed: ${msg}`, 'error');
+      }
     }
   } catch (err) {
     toast(`Error: ${err.message}`, 'error');
