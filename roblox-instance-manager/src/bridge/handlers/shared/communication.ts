@@ -52,7 +52,7 @@ export function SendToClient(target: RobloxClient, message: string): void {
   if (target.transport === "ws" && target.ws && target.ws.readyState === WebSocket.OPEN) {
     target.ws.send(message);
   } else if (target.transport === "http") {
-    target.pendingHttpCommand = message;
+    target.commandQueue.push(message);
   }
 }
 

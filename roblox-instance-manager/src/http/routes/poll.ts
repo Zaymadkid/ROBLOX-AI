@@ -18,13 +18,19 @@ export function GET(_req: IncomingMessage, res: ServerResponse, url: URL): void 
 
   client.lastHttpPoll = Date.now();
 
-  if (client.pendingHttpCommand) {
-    const cmd = client.pendingHttpCommand;
-    client.pendingHttpCommand = null;
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(cmd);
-  } else {
+  if (client.commandQueue.length === 0) {
     res.writeHead(204);
     res.end();
+    return;
   }
+
+  // Drain the entire queue atomically and return all pending commands.
+  // Each entry is already a serialized JSON string — parse then re-wrap so
+  // the client gets a single well-formed envelope:
+  //   { commands: [ { type, id, ... }, ... ] }
+  const commands = client.commandQueue.map((raw) => JSON.parse(raw));
+  client.commandQueue = [];
+
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ commands }));
 }

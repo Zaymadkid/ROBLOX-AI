@@ -1,7 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { ToolTextResponse } from "../../factory.js";
+import { toolTextResponse, type ToolTextResponse } from "../../factory.js";
 import { isSecondaryRelay, relayToolToApi } from "../../factory.js";
+import { maxOutputCharsSchema } from "../../schemas.js";
 import { fetchScriptSearchIndex, type ScriptSearchDocument } from "./script-sources.js";
 
 interface ScriptMatch {
@@ -176,15 +177,22 @@ export default function register(server: McpServer): void {
           .describe("When false, matches case-insensitively. Equivalent to grep -i. (default: true)")
           .optional()
           .default(true),
+        maxOutputChars: maxOutputCharsSchema,
       }),
     },
     async (options): Promise<ToolTextResponse> => {
+      const { maxOutputChars } = options as typeof options & { maxOutputChars?: number };
+
       if (isSecondaryRelay()) {
         return relayToolToApi("script-grep", {
           query: options.query,
           limit: options.limit,
           literal: options.literal,
           caseSensitive: options.caseSensitive,
+          maxOutputChars,
+        }, 60000, {
+          maxOutputChars,
+          truncationHint: "Rerun with a more specific query, maxResults cap, or lower limit.",
         });
       }
 
@@ -193,7 +201,7 @@ export default function register(server: McpServer): void {
         regex = compileQuery(options.query, options.literal, options.caseSensitive);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        return { content: [{ type: "text", text: `Invalid regex pattern: ${message}` }] };
+        return toolTextResponse(`Invalid regex pattern: ${message}`, {}, true);
       }
 
       const indexResult = await fetchScriptSearchIndex({ allowIncomplete: true });
@@ -210,9 +218,10 @@ export default function register(server: McpServer): void {
         ? ""
         : ` (partial index: ${index.mappedSources}/${index.sourcesToMap} scripts uploaded)`;
 
-      return {
-        content: [{ type: "text", text: formatResults(totalMatches, matches, limited, syncNote) }],
-      };
+      return toolTextResponse(formatResults(totalMatches, matches, limited, syncNote), {
+        maxOutputChars,
+        truncationHint: "Rerun with a more specific query, maxResults cap, or lower limit.",
+      });
     }
   );
 }

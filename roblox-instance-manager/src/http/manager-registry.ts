@@ -1,14 +1,17 @@
 import { ProcessManager } from "../process/manager.js";
 import { AccountStore } from "../accounts/store.js";
+import { ScriptLibrary } from "../scripts/library.js";
 
 let processManager: ProcessManager | null = null;
 let accountStore: AccountStore | null = null;
+let scriptLibrary: ScriptLibrary | null = null;
 let dataDir: string = "";
 
 export function setManagerInstances(pm: ProcessManager, store: AccountStore, dir: string) {
   processManager = pm;
   accountStore = store;
   dataDir = dir;
+  scriptLibrary = new ScriptLibrary(dir);
 }
 
 export function getProcessManager(): ProcessManager | null {
@@ -21,4 +24,8 @@ export function getAccountStore(): AccountStore | null {
 
 export function getDataDir(): string {
   return dataDir;
+}
+
+export function getScriptLibrary(): ScriptLibrary | null {
+  return scriptLibrary;
 }

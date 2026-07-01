@@ -9,6 +9,7 @@ import {
   type RouteHandler,
   type WsRouteHandler,
 } from "./types.js";
+import { GET as getScriptLibrary, POST as postScriptLibrary, DELETE as deleteScriptLibrary } from "./routes/api/script-library.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const routesDir = path.join(__dirname, "routes");
@@ -256,6 +257,13 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
       }
       return;
     }
+    // ── Script Library ───────────────────────────────────────────────────────
+    if (url.pathname === "/api/script-library") {
+      if (req.method === "GET")    { await getScriptLibrary(req, res, url);    return; }
+      if (req.method === "POST")   { await postScriptLibrary(req, res, url);   return; }
+      if (req.method === "DELETE") { await deleteScriptLibrary(req, res, url); return; }
+    }
+
     if (url.pathname === "/api/clients/close") {
       const clientId = url.searchParams.get("clientId");
       if (!clientId) {

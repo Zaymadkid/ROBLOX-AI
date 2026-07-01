@@ -84,3 +84,13 @@ export const ScreenshotShape = {
 };
 
 export const ExecutorInfoShape = {};
+
+export const SaveScriptShape = {
+  name: z.string().describe("A short, descriptive name for the script (e.g. 'Infinite Jump', 'ESP Walls')."),
+  description: z.string().describe("What the script does — explain its purpose and behavior clearly."),
+  code: z.string().describe("The complete Luau script code."),
+  game: z.string().optional().describe("The Roblox game this script is made for (e.g. 'Blox Fruits', 'Arsenal'). Omit if it works in any game."),
+  placeId: z.number().optional().describe("The Roblox place ID of the target game, if known."),
+  features: z.array(z.string()).optional().describe("List of specific features the script provides (e.g. ['Aimbot', 'No Recoil', 'Speed Hack'])."),
+  tags: z.array(z.string()).optional().describe("Tags for categorization (e.g. ['combat', 'movement', 'utility'])."),
+};

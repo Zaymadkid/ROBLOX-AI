@@ -7,7 +7,7 @@ import { ProcessManager } from "./process/manager.js";
 import { ExecutorCoordinator } from "./bridge/coordinator.js";
 import { boot } from "./bridge/boot.js";
 import { registerAllTools as registerExecutorTools } from "./executor-tools/index.js";
-import { setManagerInstances } from "./http/manager-registry.js";
+import { setManagerInstances, getScriptLibrary } from "./http/manager-registry.js";
 
 const config = loadConfig();
 
@@ -25,7 +25,7 @@ const server = new McpServer({
     "execute Luau in active client, decompile/grep scripts, spy on remote signals, take screenshots, type/click in GUI.",
 });
 
-registerAllTools(server, accountStore, processManager, coordinator);
+registerAllTools(server, accountStore, processManager, coordinator, getScriptLibrary());
 registerExecutorTools(server);
 
 const transport = new StdioServerTransport();

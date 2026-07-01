@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { sendAndWait } from "../../factory.js";
+import { maxOutputCharsSchema } from "../../schemas.js";
 
 export default function register(server: McpServer): void {
   server.registerTool(
@@ -31,9 +32,10 @@ export default function register(server: McpServer): void {
           .describe("Maximum number of recent calls to return per remote (default: 5)")
           .optional()
           .default(5),
+        maxOutputChars: maxOutputCharsSchema,
       }),
     },
-    async ({ direction, remoteNameFilter, limit, maxCallsPerRemote }) =>
+    async ({ direction, remoteNameFilter, limit, maxCallsPerRemote, maxOutputChars }) =>
       sendAndWait({
         type: "get-remote-spy-logs",
         data: {
@@ -42,6 +44,9 @@ export default function register(server: McpServer): void {
           limit,
           maxCallsPerRemote,
         },
+        maxOutputChars,
+        stampClient: true,
+        truncationHint: "Rerun with a remoteNameFilter, lower limit, or smaller maxCallsPerRemote.",
         failureMessage: (response) =>
           "Failed to get remote spy logs. Response: " + JSON.stringify(response),
       })

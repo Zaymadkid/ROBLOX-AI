@@ -1,9 +1,102 @@
 <!DOCTYPE html>
-<html><head><title>ROBLOX AI</title>
-<style>body{width:300px;padding:16px;font-family:-apple-system,sans-serif}h1{font-size:18px;margin:0 0 12px}.status{padding:8px;background:#e8f5e9;border-radius:4px;font-size:12px}</style>
-</head><body>
-<h1>ROBLOX AI</h1>
-<p>Toolset for Roblox vulnerability research</p>
-<div class="status">Extension loaded</div>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roblox AI</title>
+<style>
+  :root {
+    --bg: #000;
+    --bg-1: #0a0a0a;
+    --bg-2: #111;
+    --border: rgba(255,255,255,0.08);
+    --text: #fff;
+    --text-2: #a1a1aa;
+    --text-3: #52525b;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --sans: 'Geist', -apple-system, system-ui, sans-serif;
+    --mono: 'Geist Mono', 'SF Mono', monospace;
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 280px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-1);
+  }
+  .logo {
+    width: 26px; height: 26px;
+    background: #3b82f6;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo svg { color: #fff; }
+  .header-text .title { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; }
+  .header-text .sub   { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+  .body { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .status-label { font-size: 12px; color: var(--text-2); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 99px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .badge-ok  { background: rgba(34,197,94,0.1);  color: #22c55e; }
+  .badge-ok .badge-dot  { background: #22c55e; }
+  .badge-off { background: rgba(239,68,68,0.1);  color: #ef4444; }
+  .badge-off .badge-dot { background: #ef4444; }
+  .footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-3);
+    font-family: var(--mono);
+    text-align: center;
+    background: var(--bg-1);
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+  </div>
+  <div class="header-text">
+    <div class="title">Roblox AI</div>
+    <div class="sub">Vulnerability Research Toolset</div>
+  </div>
+</div>
+<div class="body">
+  <div class="status-row">
+    <span class="status-label">Extension status</span>
+    <span class="badge badge-ok"><span class="badge-dot"></span>Loaded</span>
+  </div>
+</div>
+<div class="footer">roblox-ai · v1.1.0</div>
 <script src="popup.js"></script>
-</body></html>
+</body>
+</html>

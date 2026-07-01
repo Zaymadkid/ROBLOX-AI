@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { sendAndWait } from "../../factory.js";
+import { maxOutputCharsSchema } from "../../schemas.js";
 
 export default function register(server: McpServer): void {
   server.registerTool(
@@ -35,12 +36,16 @@ export default function register(server: McpServer): void {
           )
           .optional()
           .default(50),
+        maxOutputChars: maxOutputCharsSchema,
       }),
     },
-    async ({ root, maxDepth, classFilter, maxChildren }) =>
+    async ({ root, maxDepth, classFilter, maxChildren, maxOutputChars }) =>
       sendAndWait({
         type: "get-descendants-tree",
         data: { root, maxDepth, classFilter: classFilter || "", maxChildren },
+        maxOutputChars,
+        stampClient: true,
+        truncationHint: "Rerun with a deeper root path, smaller maxDepth, or classFilter to narrow results.",
         failureMessage: (response) =>
           "Failed to get descendants tree. Response: " + JSON.stringify(response),
       })

@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { AccountStore } from "../accounts/store.js";
 import { ProcessManager } from "../process/manager.js";
 import { ExecutorCoordinator } from "../bridge/coordinator.js";
+import { ScriptLibrary } from "../scripts/library.js";
 import { handleLaunchClient } from "./impl/launch-client.js";
 import { handleJoinGame } from "./impl/join-game.js";
 import { handleListClients } from "./impl/list-clients.js";
@@ -11,17 +12,20 @@ import { handleCloseClient } from "./impl/close-client.js";
 import { handleManageAccounts } from "./impl/manage-accounts.js";
 import { handleScreenshot } from "./impl/screenshot.js";
 import { handleExecutorInfo } from "./impl/executor-info.js";
+import { handleSaveScript } from "./impl/save-script.js";
 import {
   LaunchClientShape, JoinGameShape, ListClientsShape,
   ClientStatusShape, RestartClientShape, CloseClientShape,
   ManageAccountsShape, ScreenshotShape, ExecutorInfoShape,
+  SaveScriptShape,
 } from "./schemas.js";
 
 export function registerAllTools(
   server: McpServer,
   accountStore: AccountStore,
   processManager: ProcessManager,
-  coordinator: ExecutorCoordinator
+  coordinator: ExecutorCoordinator,
+  scriptLibrary?: ScriptLibrary | null
 ): void {
   server.tool(
     "launch_client",
@@ -119,4 +123,16 @@ export function registerAllTools(
     ExecutorInfoShape,
     async (params) => handleExecutorInfo(params, coordinator)
   );
+
+  if (scriptLibrary) {
+    server.tool(
+      "save_script_to_library",
+      "Save a working Luau script to the user's script library. " +
+      "The script will be saved with PENDING status — the user must review and approve it from the dashboard. " +
+      "Always ask the user before calling this tool. " +
+      "Use this after successfully creating or verifying a script works.",
+      SaveScriptShape,
+      async (params) => handleSaveScript(params, scriptLibrary!)
+    );
+  }
 }

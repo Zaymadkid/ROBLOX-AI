@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { sendAndWait } from "../../factory.js";
-import { threadContextSchema } from "../../schemas.js";
+import { maxOutputCharsSchema, threadContextSchema } from "../../schemas.js";
 
 export default function register(server: McpServer): void {
   server.registerTool(
@@ -24,9 +24,10 @@ export default function register(server: McpServer): void {
           )
           .optional()
           .default(15000),
+        maxOutputChars: maxOutputCharsSchema,
       }),
     },
-    async ({ code, threadContext, timeout }) => {
+    async ({ code, threadContext, timeout, maxOutputChars }) => {
       console.error(`Executing code in thread ${threadContext}...`);
       const clampedTimeout = Math.min(Math.max(timeout, 1000), 120000);
 
@@ -34,6 +35,9 @@ export default function register(server: McpServer): void {
         type: "get-data-by-code",
         data: { source: `setthreadidentity(${threadContext});${code}` },
         timeoutMs: clampedTimeout,
+        maxOutputChars,
+        stampClient: true,
+        truncationHint: "Rerun get-data-by-code with a more targeted query or raise maxOutputChars.",
         failureMessage: (response) =>
           "Failed to get data by code. Response: " + JSON.stringify(response),
       });

@@ -4,3 +4,5 @@ dist/
 *.log
 *.bat
 *.cmd
+raknet-decryption/
+connector_base64.txt

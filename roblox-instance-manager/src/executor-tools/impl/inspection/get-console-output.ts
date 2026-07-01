@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { sendAndWait } from "../../factory.js";
+import { maxOutputCharsSchema } from "../../schemas.js";
 
 export default function register(server: McpServer): void {
   server.registerTool(
@@ -12,9 +13,9 @@ export default function register(server: McpServer): void {
       inputSchema: z.object({
         limit: z
           .number()
-          .describe("Maximum number of results to return (default: 50, to avoid overwhelming output)")
+          .describe("Maximum number of results to return (default: 10, to avoid overwhelming output)")
           .optional()
-          .default(50),
+          .default(10),
         logsOrder: z
           .enum(["NewestFirst", "OldestFirst"])
           .describe("The order of the logs to return (default: NewestFirst)")
@@ -24,12 +25,16 @@ export default function register(server: McpServer): void {
           .string()
           .describe("Optional string filter; only logs containing this text are returned")
           .optional(),
+        maxOutputChars: maxOutputCharsSchema,
       }),
     },
-    async ({ limit, logsOrder, filter }) =>
+    async ({ limit, logsOrder, filter, maxOutputChars }) =>
       sendAndWait({
         type: "get-console-output",
         data: { limit, logsOrder, filter },
+        maxOutputChars,
+        stampClient: true,
+        truncationHint: "Rerun get-console-output with a filter, lower limit, or summaryOnly=true.",
         failureMessage: () => "Failed to get console output.",
       })
   );

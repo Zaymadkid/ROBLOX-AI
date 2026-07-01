@@ -434,22 +434,35 @@ local HTTPBridge = setmetatable({}, {__index = BaseBridge}); do
                     --// Handle response \\--
                     if response.Body and response.Body ~= "" then
                         local data = HttpService:JSONDecode(response.Body)
-                        if data == nil or data.type == nil then return end
-                        
-                        task.spawn(function()
-                            local result = self:HandleMessage(data)
-                            if result == nil then return end
-                            
-                            --// Send response back \\--
-                            request({
-                                Url = "http://" .. BridgeURL .. "/respond",
-                                Method = "POST",
-                                Headers = {
-                                    ["Content-Type"] = "application/json"
-                                },
-                                Body = HttpService:JSONEncode(result)
-                            })
-                        end)
+                        if data == nil then return end
+
+                        -- Collect commands: new batched envelope { commands = [...] }
+                        -- or legacy single-command object { type = "...", ... }
+                        local commands = {}
+                        if type(data.commands) == "table" then
+                            commands = data.commands
+                        elseif data.type ~= nil then
+                            commands = { data }
+                        end
+
+                        for _, cmd in ipairs(commands) do
+                            if cmd ~= nil and cmd.type ~= nil then
+                                task.spawn(function()
+                                    local result = self:HandleMessage(cmd)
+                                    if result == nil then return end
+
+                                    --// Send response back \\--
+                                    request({
+                                        Url = "http://" .. BridgeURL .. "/respond",
+                                        Method = "POST",
+                                        Headers = {
+                                            ["Content-Type"] = "application/json"
+                                        },
+                                        Body = HttpService:JSONEncode(result)
+                                    })
+                                end)
+                            end
+                        end
                     end
                 end)
     

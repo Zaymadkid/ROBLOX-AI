@@ -50,16 +50,35 @@ export class AccountStore {
   }
 
   async addAccount(alias: string, cookie: string): Promise<void> {
+    // Normalize cookie before storing — strip browser warning prefix
+    let normalizedCookie = cookie.trim();
+    if (normalizedCookie.startsWith("_|WARNING")) {
+      const idx = normalizedCookie.lastIndexOf("|_");
+      if (idx !== -1) normalizedCookie = normalizedCookie.slice(idx + 2).trim();
+    }
+    if (normalizedCookie.startsWith(".ROBLOSECURITY=")) {
+      normalizedCookie = normalizedCookie.slice(".ROBLOSECURITY=".length);
+    }
+    cookie = normalizedCookie;
     const encrypted = encrypt(cookie);
     let userId: number | undefined;
     let username: string | undefined;
     let avatarUrl: string | undefined;
 
     try {
+      // Strip warning prefix and avoid double-prefixing
+      let cookieVal = cookie.trim();
+      if (cookieVal.startsWith("_|WARNING")) {
+        const idx = cookieVal.lastIndexOf("|_");
+        if (idx !== -1) cookieVal = cookieVal.slice(idx + 2).trim();
+      }
+      if (cookieVal.startsWith(".ROBLOSECURITY=")) cookieVal = cookieVal.slice(".ROBLOSECURITY=".length);
+      const formattedCookie = `.ROBLOSECURITY=${cookieVal}`;
+
       const userRes = await fetch("https://users.roblox.com/v1/users/authenticated", {
         headers: {
-          "Cookie": `.ROBLOSECURITY=${cookie}`,
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+          "Cookie": formattedCookie,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         }
       });
       if (userRes.ok) {

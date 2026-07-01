@@ -12,7 +12,8 @@ export interface RobloxClient {
   transport: "ws" | "http";
   ws?: WebSocket;
   lastHttpPoll: number;
-  pendingHttpCommand: string | null;
+  /** FIFO queue of serialized JSON commands waiting to be picked up by the HTTP polling client. */
+  commandQueue: string[];
 }
 
 export interface RobloxResponse {

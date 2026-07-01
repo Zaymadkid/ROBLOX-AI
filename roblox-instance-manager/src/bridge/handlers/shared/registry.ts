@@ -42,7 +42,7 @@ export function registerClient(info: {
     transport: info.transport,
     ws: info.ws,
     lastHttpPoll: Date.now(),
-    pendingHttpCommand: null,
+    commandQueue: [],
   };
   clientRegistry.set(clientId, entry);
   if (info.ws) {

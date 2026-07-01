@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { sendAndWait } from "../../factory.js";
+import { maxOutputCharsSchema } from "../../schemas.js";
 
 export default function register(server: McpServer): void {
   server.registerTool(
@@ -27,12 +28,16 @@ export default function register(server: McpServer): void {
           .describe("Maximum number of results to return (default: 50, to avoid overwhelming output)")
           .optional()
           .default(50),
+        maxOutputChars: maxOutputCharsSchema,
       }),
     },
-    async ({ selector, root, limit }) =>
+    async ({ selector, root, limit, maxOutputChars }) =>
       sendAndWait({
         type: "search-instances",
         data: { selector, root, limit },
+        maxOutputChars,
+        stampClient: true,
+        truncationHint: "Rerun with a more specific selector or smaller limit.",
         failureMessage: (response) =>
           "Failed to search instances. Response: " + JSON.stringify(response),
       })
