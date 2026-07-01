@@ -14,10 +14,19 @@ import { handleScreenshot } from "./impl/screenshot.js";
 import { handleExecutorInfo } from "./impl/executor-info.js";
 import { handleSaveScript } from "./impl/save-script.js";
 import {
+  handleListScripts,
+  handleGetScript,
+  handleDeleteScript,
+  handleUpdateScript,
+  handleApproveScript,
+} from "./impl/script-library.js";
+import {
   LaunchClientShape, JoinGameShape, ListClientsShape,
   ClientStatusShape, RestartClientShape, CloseClientShape,
   ManageAccountsShape, ScreenshotShape, ExecutorInfoShape,
   SaveScriptShape,
+  ListScriptsShape, GetScriptShape, DeleteScriptShape,
+  UpdateScriptShape, ApproveScriptShape,
 } from "./schemas.js";
 
 export function registerAllTools(
@@ -133,6 +142,50 @@ export function registerAllTools(
       "Use this after successfully creating or verifying a script works.",
       SaveScriptShape,
       async (params) => handleSaveScript(params, scriptLibrary!)
+    );
+
+    server.tool(
+      "list_scripts",
+      "List scripts saved in the user's script library. " +
+      "Returns script IDs, names, games, descriptions, features, status (approved/pending), and timestamps. " +
+      "Use this to browse available scripts or find a specific script's ID before calling get_script, update_script, or delete_script.",
+      ListScriptsShape,
+      (params) => handleListScripts(params, scriptLibrary!)
+    );
+
+    server.tool(
+      "get_script",
+      "Get a specific script from the library by ID, including its full Luau code. " +
+      "Use list_scripts first to find the script ID.",
+      GetScriptShape,
+      (params) => handleGetScript(params, scriptLibrary!)
+    );
+
+    server.tool(
+      "update_script",
+      "Update an existing script in the library. " +
+      "Only the fields you provide are changed — omit any field to leave it unchanged. " +
+      "Updates the updatedAt timestamp automatically. " +
+      "Use list_scripts to find the script ID first.",
+      UpdateScriptShape,
+      (params) => handleUpdateScript(params, scriptLibrary!)
+    );
+
+    server.tool(
+      "delete_script",
+      "Permanently delete a script from the library by ID. " +
+      "This cannot be undone. Always confirm with the user before calling this. " +
+      "Use list_scripts to find the script ID first.",
+      DeleteScriptShape,
+      (params) => handleDeleteScript(params, scriptLibrary!)
+    );
+
+    server.tool(
+      "approve_script",
+      "Approve a pending script in the library, making it visible as an approved script. " +
+      "Scripts saved by the AI start as pending — use this if the user confirms approval via chat instead of the dashboard.",
+      ApproveScriptShape,
+      (params) => handleApproveScript(params, scriptLibrary!)
     );
   }
 }
