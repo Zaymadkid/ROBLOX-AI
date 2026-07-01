@@ -647,6 +647,29 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
 }
 .pending-banner strong { font-weight: 600; }
 
+/* ── Edit script modal ── */
+.modal-form-row { display: flex; flex-direction: column; gap: 4px; }
+.modal-form-row label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.modal-input {
+  width: 100%; background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 10px; font-size: 13px; color: var(--text);
+  font-family: var(--sans); outline: none; transition: border-color 0.1s;
+}
+.modal-input:focus { border-color: var(--blue-border); }
+.modal-code {
+  font-family: var(--mono); font-size: 12px; color: var(--text-2);
+  background: var(--bg); resize: vertical; min-height: 120px;
+}
+
+/* ── Delete confirm ── */
+.delete-confirm {
+  background: var(--red-dim); border: 1px solid rgba(239,68,68,0.3);
+  border-radius: var(--radius); padding: 10px 14px;
+  font-size: 12px; color: var(--red);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.delete-confirm span { font-weight: 500; }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .sidebar { display: none; }
@@ -1046,6 +1069,70 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
         <div class="detail-field"><label>Status</label><div class="val" id="detStatus">-</div></div>
         <div class="detail-field"><label>Uptime</label><div class="val" id="detUptime">-</div></div>
         <div class="detail-field full"><label>Started At</label><div class="val" id="detStarted">-</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Script Modal -->
+<div class="overlay" id="editScriptOverlay">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2>Edit Script</h2>
+      <button class="modal-close" onclick="closeEditScriptModal()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editScriptId">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="modal-form-row">
+          <label>Name *</label>
+          <input id="editScriptName" type="text" class="modal-input" placeholder="e.g. Infinite Jump">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="modal-form-row">
+            <label>Game (optional)</label>
+            <input id="editScriptGame" type="text" class="modal-input" placeholder="e.g. Blox Fruits">
+          </div>
+          <div class="modal-form-row">
+            <label>Place ID (optional)</label>
+            <input id="editScriptPlaceId" type="number" class="modal-input" placeholder="e.g. 2753915549">
+          </div>
+        </div>
+        <div class="modal-form-row">
+          <label>Description</label>
+          <textarea id="editScriptDesc" rows="2" class="modal-input" placeholder="What does this script do?"></textarea>
+        </div>
+        <div class="modal-form-row">
+          <label>Features (comma separated)</label>
+          <input id="editScriptFeatures" type="text" class="modal-input" placeholder="Aimbot, No Recoil, ESP">
+        </div>
+        <div class="modal-form-row">
+          <label>Tags (comma separated)</label>
+          <input id="editScriptTags" type="text" class="modal-input" placeholder="combat, utility, movement">
+        </div>
+        <div class="modal-form-row">
+          <label>Code *</label>
+          <textarea id="editScriptCode" rows="8" class="modal-input modal-code" placeholder="-- Paste your Luau script here"></textarea>
+        </div>
+        <div id="editDeleteConfirm" class="delete-confirm" style="display:none">
+          <span>Are you sure? This cannot be undone.</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn" onclick="document.getElementById('editDeleteConfirm').style.display='none'">Cancel</button>
+            <button class="btn btn-red" onclick="confirmDeleteScript()">Delete permanently</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:space-between">
+          <button class="btn btn-red" onclick="document.getElementById('editDeleteConfirm').style.display='flex'">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            Delete Script
+          </button>
+          <div style="display:flex;gap:6px">
+            <button class="btn" onclick="closeEditScriptModal()">Cancel</button>
+            <button class="btn btn-blue" onclick="submitEditScript()">Save Changes</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1517,7 +1604,9 @@ function renderScripts(scripts) {
   el.innerHTML = scripts.map(s => {
     const isPending = s.status === 'pending';
     const createdAt = new Date(s.createdAt).toLocaleDateString();
+    const updatedAt = s.updatedAt ? new Date(s.updatedAt).toLocaleString() : null;
     const features = (s.features || []).slice(0, 6);
+    const safeData = JSON.stringify(s).replace(/'/g, "&#39;").replace(/"/g, '&quot;');
     return `<div class="script-card ${isPending ? 'pending' : ''}" id="sc-${s.id}">
       ${isPending ? `<div class="pending-banner">
         <span><svg width=12 height=12 viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2><circle cx=12 cy=12 r=10/><line x1=12 y1=8 x2=12 y2=12/><line x1=12 y1=16 x2=12.01 y2=16/></svg> <strong>Pending review</strong> — saved by AI</span>
@@ -1531,7 +1620,8 @@ function renderScripts(scripts) {
           <div class="script-card-title">${s.name}</div>
           <div class="script-card-meta">
             ${s.game ? `<span style="color:var(--blue)">${s.game}</span> · ` : ''}
-            ${createdAt} · ${s.addedBy === 'ai' ? 'Added by AI' : 'Added manually'}
+            Added ${createdAt}${s.addedBy === 'ai' ? ' by AI' : ''}
+            ${updatedAt ? ` · <span title="Last updated ${updatedAt}">Updated ${updatedAt}</span>` : ''}
           </div>
         </div>
         <div class="script-card-actions">
@@ -1539,8 +1629,9 @@ function renderScripts(scripts) {
             <svg width=11 height=11 viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             Code
           </button>
-          <button class="btn btn-red" onclick="deleteScript('${s.id}')">
-            <svg width=11 height=11 viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          <button class="btn" onclick="openEditScriptModal(${safeData})">
+            <svg width=11 height=11 viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
           </button>
         </div>
       </div>
@@ -1575,7 +1666,65 @@ async function deleteScript(id) {
     await fetch(`/api/script-library?id=${id}`, { method: 'DELETE' });
     toast('Script removed.', 'info');
     loadScripts();
-  } catch { toast('Failed to delete', 'error'); }
+  } catch { toast('Failed to delete.', 'error'); }
+}
+
+/* ── Edit script ── */
+function openEditScriptModal(s) {
+  document.getElementById('editScriptId').value = s.id;
+  document.getElementById('editScriptName').value = s.name || '';
+  document.getElementById('editScriptGame').value = s.game || '';
+  document.getElementById('editScriptPlaceId').value = s.placeId || '';
+  document.getElementById('editScriptDesc').value = s.description || '';
+  document.getElementById('editScriptFeatures').value = (s.features || []).join(', ');
+  document.getElementById('editScriptTags').value = (s.tags || []).join(', ');
+  document.getElementById('editScriptCode').value = s.code || '';
+  document.getElementById('editDeleteConfirm').style.display = 'none';
+  document.getElementById('editScriptOverlay').classList.add('open');
+}
+function closeEditScriptModal() {
+  document.getElementById('editScriptOverlay').classList.remove('open');
+}
+document.getElementById('editScriptOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeEditScriptModal();
+});
+
+async function submitEditScript() {
+  const id = document.getElementById('editScriptId').value;
+  const name = document.getElementById('editScriptName').value.trim();
+  const code = document.getElementById('editScriptCode').value.trim();
+  if (!name || !code) { toast('Name and Code are required.', 'error'); return; }
+
+  const game = document.getElementById('editScriptGame').value.trim();
+  const placeId = document.getElementById('editScriptPlaceId').value.trim();
+  const desc = document.getElementById('editScriptDesc').value.trim();
+  const featStr = document.getElementById('editScriptFeatures').value.trim();
+  const tagStr = document.getElementById('editScriptTags').value.trim();
+
+  try {
+    await fetch(`/api/script-library?action=update&id=${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        description: desc,
+        game: game || undefined,
+        placeId: placeId ? Number(placeId) : undefined,
+        features: featStr ? featStr.split(',').map(f => f.trim()).filter(Boolean) : [],
+        tags: tagStr ? tagStr.split(',').map(t => t.trim()).filter(Boolean) : [],
+        code,
+      }),
+    });
+    toast('Script updated!', 'success');
+    closeEditScriptModal();
+    loadScripts();
+  } catch { toast('Failed to save changes.', 'error'); }
+}
+
+async function confirmDeleteScript() {
+  const id = document.getElementById('editScriptId').value;
+  await deleteScript(id);
+  closeEditScriptModal();
 }
 
 function showAddScriptModal() { document.getElementById('addScriptOverlay').classList.add('open'); }

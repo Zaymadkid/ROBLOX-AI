@@ -12,6 +12,7 @@ export interface ScriptEntry {
   tags: string[];
   code: string;
   createdAt: string;
+  updatedAt: string;
   status: "approved" | "pending";
   addedBy: "ai" | "user";
 }
@@ -42,11 +43,13 @@ export class ScriptLibrary {
     writeFileSync(this.filePath, JSON.stringify(this.scripts, null, 2), "utf-8");
   }
 
-  addScript(entry: Omit<ScriptEntry, "id" | "createdAt">): ScriptEntry {
+  addScript(entry: Omit<ScriptEntry, "id" | "createdAt" | "updatedAt">): ScriptEntry {
+    const now = new Date().toISOString();
     const script: ScriptEntry = {
       ...entry,
       id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     this.scripts.unshift(script);
     this.save();
@@ -71,6 +74,7 @@ export class ScriptLibrary {
     const script = this.scripts.find((s) => s.id === id);
     if (!script) return false;
     script.status = "approved";
+    script.updatedAt = new Date().toISOString();
     this.save();
     return true;
   }
@@ -87,6 +91,7 @@ export class ScriptLibrary {
     const script = this.scripts.find((s) => s.id === id);
     if (!script) return false;
     Object.assign(script, updates);
+    script.updatedAt = new Date().toISOString();
     this.save();
     return true;
   }

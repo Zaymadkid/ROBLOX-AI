@@ -22,7 +22,7 @@ export async function handleSaveScript(
     tags: params.tags ?? [],
     status: "pending",
     addedBy: "ai",
-  });
+  } as any);
 
   return {
     content: [{
