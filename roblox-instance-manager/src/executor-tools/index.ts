@@ -13,6 +13,7 @@ import registerScriptGrep from "./impl/inspection/script-grep.js";
 import registerSemanticSearchScripts from "./impl/inspection/semantic-search-scripts.js";
 import registerGetGameInfo from "./impl/inspection/get-game-info.js";
 import registerGetDescendantsTree from "./impl/inspection/get-descendants-tree.js";
+import registerListScriptPaths from "./impl/inspection/list-script-paths.js";
 
 import registerEnsureRemoteSpy from "./impl/remote-spy/ensure-remote-spy.js";
 import registerGetRemoteSpyLogs from "./impl/remote-spy/get-remote-spy-logs.js";
@@ -42,6 +43,7 @@ export function registerAllTools(server: McpServer): void {
   registerSemanticSearchScripts(server);
   registerGetGameInfo(server);
   registerGetDescendantsTree(server);
+  registerListScriptPaths(server);
 
   registerEnsureRemoteSpy(server);
   registerGetRemoteSpyLogs(server);
