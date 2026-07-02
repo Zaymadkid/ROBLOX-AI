@@ -25,11 +25,13 @@ export interface ScriptSourceStoreIdentity {
   clientId: string;
   placeId: number;
   jobId: string;
+  placeName?: string;
 }
 
 interface ClientScriptSourceStore {
   placeId: number;
   jobId: string;
+  placeName: string;
   hasFinishedMapping: boolean;
   processedSources: number;
   skippedSources: number;
@@ -51,6 +53,14 @@ export interface UpsertScriptSourcesInput {
 
 const storesByClientId: Map<string, ClientScriptSourceStore> = new Map();
 
+// Optional diff hook — registered by manager-registry after DiffHistory is ready
+type DiffHook = (placeId: number, placeName: string, path: string, source: string, hash: string) => void;
+let diffHook: DiffHook | null = null;
+
+export function registerDiffHook(fn: DiffHook): void {
+  diffHook = fn;
+}
+
 function hashSource(source: string): string {
   return crypto.createHash("sha256").update(source).digest("hex");
 }
@@ -62,6 +72,7 @@ function getOrCreateStore(identity: ScriptSourceStoreIdentity): ClientScriptSour
     store = {
       placeId: identity.placeId,
       jobId: identity.jobId,
+      placeName: identity.placeName ?? "",
       hasFinishedMapping: false,
       processedSources: 0,
       skippedSources: 0,
@@ -113,6 +124,11 @@ export function upsertScriptSources(
         path: script.path,
       });
       continue;
+    }
+
+    // New or changed script — fire diff hook if registered
+    if (diffHook) {
+      diffHook(store.placeId, store.placeName, script.path, script.source, sourceHash);
     }
 
     store.scripts.set(script.debugId, {

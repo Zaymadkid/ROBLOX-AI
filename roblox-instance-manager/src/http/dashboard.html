@@ -610,6 +610,33 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
 }
 .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
 
+/* ── Diff viewer ── */
+.diff-card {
+  background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 10px;
+}
+.diff-card-header {
+  padding: 12px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.diff-card-title { font-size: 13px; font-weight: 600; font-family: var(--mono); color: var(--blue); }
+.diff-card-meta  { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.diff-chips { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+.diff-chip-add { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); border-radius: 99px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.diff-chip-del { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(239,68,68,0.2);  border-radius: 99px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.diff-body { display: none; }
+.diff-body.open { display: block; }
+.diff-code {
+  margin: 0; padding: 12px 16px;
+  font-family: var(--mono); font-size: 11px; line-height: 1.7;
+  overflow-x: auto; background: var(--bg);
+  border-top: 1px solid var(--border);
+  white-space: pre;
+}
+.diff-add { color: var(--green); }
+.diff-del { color: var(--red);   }
+.diff-hdr { color: var(--blue);  font-weight: 600; }
+.diff-ctx { color: var(--text-3); }
+
 /* ── Script library ── */
 .script-list { display: flex; flex-direction: column; gap: 10px; }
 .script-card {
@@ -715,6 +742,11 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
     </div>
     <div class="nav-group">
       <div class="nav-group-label">Roblox</div>
+      <div class="nav-item" data-page="diffs">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Script Diffs
+        <span class="nav-badge" id="navDiffsBadge" style="display:none">0</span>
+      </div>
       <div class="nav-item" data-page="scripts">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
         Script Library
@@ -1193,6 +1225,27 @@ tr:hover td { background: rgba(255,255,255,0.02); color: var(--text); }
       </div>
     </div>
 
+    <!-- DIFFS -->
+    <div class="page" id="page-diffs">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div>
+          <h1>Script Diffs</h1>
+          <p>Every time you analyze a game twice, this shows exactly what changed between sessions.</p>
+        </div>
+        <button class="btn btn-red" onclick="clearDiffs()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Clear All
+        </button>
+      </div>
+      <div id="diffList" class="script-list">
+        <div class="empty">
+          <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+          <div class="empty-title">No diffs yet</div>
+          <div class="empty-sub">Connect to a game, let scripts index, then reconnect after an update.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- SCRIPTS -->
     <div class="page" id="page-scripts">
       <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
@@ -1651,6 +1704,90 @@ refresh();
 setInterval(refresh, POLL);
 
 /* ═══════════════════════════════════════════════
+   SCRIPT DIFFS
+   ═══════════════════════════════════════════════ */
+async function loadDiffs() {
+  try {
+    const data = await api('/api/diffs?limit=100');
+    if (!data) return;
+
+    const badge = document.getElementById('navDiffsBadge');
+    if (badge) {
+      if (data.pendingAlerts > 0) {
+        badge.textContent = data.pendingAlerts;
+        badge.style.display = '';
+        badge.style.background = 'var(--red-dim)';
+        badge.style.color = 'var(--red)';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    renderDiffs(data.diffs || []);
+  } catch { /* non-critical */ }
+}
+
+function renderDiffs(diffs) {
+  const el = document.getElementById('diffList');
+  if (!diffs.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <div class="empty-title">No diffs yet</div>
+      <div class="empty-sub">Connect to a game, let scripts index, then reconnect after an update.</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = diffs.map(d => `
+    <div class="diff-card">
+      <div class="diff-card-header">
+        <div>
+          <div class="diff-card-title">${d.path}</div>
+          <div class="diff-card-meta">${d.placeName || `Place ${d.placeId}`} · ${new Date(d.detectedAt).toLocaleString()}</div>
+        </div>
+        <div class="diff-chips">
+          ${d.linesAdded   > 0 ? `<span class="diff-chip-add">+${d.linesAdded}</span>` : ''}
+          ${d.linesRemoved > 0 ? `<span class="diff-chip-del">-${d.linesRemoved}</span>` : ''}
+          <button class="btn" style="font-size:11px;padding:3px 8px" onclick="toggleDiff('${d.id}', this)">View diff</button>
+        </div>
+      </div>
+      <div class="diff-body" id="diff-${d.id}">
+        <div class="diff-code" id="diff-code-${d.id}">Loading…</div>
+      </div>
+    </div>`).join('');
+}
+
+async function toggleDiff(id, btn) {
+  const body = document.getElementById(`diff-${id}`);
+  const code = document.getElementById(`diff-code-${id}`);
+  const isOpen = body.classList.contains('open');
+  if (isOpen) { body.classList.remove('open'); btn.textContent = 'View diff'; return; }
+
+  btn.textContent = 'Loading…';
+  try {
+    const d = await api(`/api/diffs?id=${id}`);
+    if (!d) return;
+    // Colorize unified diff
+    code.innerHTML = d.diff.split('\n').map(line => {
+      const esc = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      if (line.startsWith('+++') || line.startsWith('---')) return `<span class="diff-hdr">${esc}</span>`;
+      if (line.startsWith('@@'))  return `<span class="diff-hdr">${esc}</span>`;
+      if (line.startsWith('+'))   return `<span class="diff-add">${esc}</span>`;
+      if (line.startsWith('-'))   return `<span class="diff-del">${esc}</span>`;
+      return `<span class="diff-ctx">${esc}</span>`;
+    }).join('\n');
+    body.classList.add('open');
+    btn.textContent = 'Hide diff';
+  } catch { btn.textContent = 'View diff'; }
+}
+
+async function clearDiffs() {
+  await fetch('/api/diffs', { method: 'DELETE' });
+  toast('Diffs cleared.', 'info');
+  loadDiffs();
+}
+
+/* ═══════════════════════════════════════════════
    SCRIPT LIBRARY
    ═══════════════════════════════════════════════ */
 let scriptsCache = [];
@@ -1978,13 +2115,18 @@ async function publishToScriptBlox(scriptId, btn) {
 document.querySelectorAll('.nav-item').forEach(item => {
   item.addEventListener('click', () => {
     if (item.dataset.page === 'scripts') loadScripts();
-    if (item.dataset.page === 'system') loadScriptBloxStatus();
+    if (item.dataset.page === 'diffs')   loadDiffs();
+    if (item.dataset.page === 'system')  loadScriptBloxStatus();
   });
 });
 
 // Initial load for badge
 loadScripts();
+loadDiffs();
 loadScriptBloxStatus();
+
+// Poll diffs every 15s for badge updates
+setInterval(loadDiffs, 15000);
 
 // Poll scripts every 10s for new pending
 setInterval(loadScripts, 10000);

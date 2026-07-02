@@ -11,6 +11,7 @@ import {
 } from "./types.js";
 import { GET as getScriptLibrary, POST as postScriptLibrary, DELETE as deleteScriptLibrary } from "./routes/api/script-library.js";
 import { GET as getScriptBlox, POST as postScriptBlox } from "./routes/api/scriptblox.js";
+import { GET as getDiffs, DELETE as deleteDiffs } from "./routes/api/diffs.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const routesDir = path.join(__dirname, "routes");
@@ -222,6 +223,12 @@ export async function dispatchHttp(req: IncomingMessage, res: ServerResponse): P
       if (req.method === "GET")    { await getScriptLibrary(req, res, url);    return; }
       if (req.method === "POST")   { await postScriptLibrary(req, res, url);   return; }
       if (req.method === "DELETE") { await deleteScriptLibrary(req, res, url); return; }
+    }
+
+    // ── Script Diffs ─────────────────────────────────────────────────────────
+    if (url.pathname === "/api/diffs") {
+      if (req.method === "GET")    { getDiffs(req, res, url);    return; }
+      if (req.method === "DELETE") { deleteDiffs(req, res, url); return; }
     }
 
     // ── ScriptBlox ───────────────────────────────────────────────────────────

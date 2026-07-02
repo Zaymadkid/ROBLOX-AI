@@ -25,6 +25,7 @@ export async function POST(req: IncomingMessage, res: ServerResponse): Promise<v
         clientId: client.clientId,
         placeId: client.placeId,
         jobId: client.jobId,
+        placeName: client.placeName,
       },
       body
     );
